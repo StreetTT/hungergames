@@ -3,6 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from .models import Alliance, Terrain
+from .engine import GameEngine
 from typing import Optional, Union, Any 
 
 class GameEvent(ABC):
@@ -43,8 +44,7 @@ class GameEvent(ABC):
         return self.base_weight * terrain.get_multiplier(self.tags)
 
     @abstractmethod
-    def execute(self, alliance: Alliance, terrain: Terrain, game_engine_ref=None):
-        # TODO: Add Game engine typing
+    def execute(self, alliance: Alliance, terrain: Terrain, game_engine_ref: Optional[GameEngine]=None):
         """
         Performs the event logic.
         Returns: String (The log text to display)
