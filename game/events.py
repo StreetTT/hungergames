@@ -4,6 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from .models import Alliance, Terrain
 from .engine import GameEngine
+from .combat import CombatResolver
 from typing import Optional, Union, Any 
 
 class GameEvent(ABC):
@@ -143,6 +144,39 @@ class AmicableDisbandEvent(GameEvent):
         names = ", ".join([a.members[0].name for a in new_alliances])
         return f"The group decides to split up. {names} go their separate ways."
 
+class CombatEvent(GameEvent):
+    """
+    Complex Event: Triggers a battle between two groups.
+    """
+    def __init__(self) -> None:
+        super().__init__("Ambush", tags=["combat"], min_size=1, max_size=10, weight=5)
+        self.resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref:
+            return "The wind howls. (Error: No Engine Ref)"
+
+        # 1. Find a target group
+        potential_targets = [
+            a for a in game_engine_ref.alliances 
+            if a != alliance and a.is_active
+        ]
+
+        if not potential_targets:
+            return f"{alliance.members[0].name} hunts for enemies but finds no one."
+
+        # Pick a random enemy group
+        enemy_alliance = random.choice(potential_targets)
+
+        # 2. Resolve Fight
+        # Current 'alliance' is the Attacker (initator)
+        result_text = self.resolver.resolve_fight(
+            attackers=alliance.members, 
+            defenders=enemy_alliance.members, 
+            terrain=terrain
+        )
+
+        return result_text
 
 class EventManager:
     """
@@ -154,7 +188,7 @@ class EventManager:
         # 1. Load Hardcoded Complex Events
         self.events.append(ScavengeEvent())
         self.events.append(AmicableDisbandEvent())
-        # self.events.append(CombatEvent()) # Coming soon
+        self.events.append(CombatEvent()) 
         
         # 2. Load JSON Events
         self.load_json_events()
