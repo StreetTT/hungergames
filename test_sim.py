@@ -7,10 +7,10 @@ from game.serialiser import save_terrain_preset, load_terrain_from_json
 def create_dummy_roster():
     """Creates 4 test characters for our battle."""
     return [
-        Tribute("Katniss", 12, "url_k", {"strength": 4, "speed": 8, "intel": 7, "aggression": 3}, proficient_items=["Bow"]),
-        Tribute("Peeta", 12, "url_p", {"strength": 8, "defense": 6, "intel": 4, "aggression": 2}, proficient_items=["Rock"]),
-        Tribute("Cato", 2, "url_c", {"strength": 9, "speed": 6, "defense": 5, "aggression": 9}, proficient_items=["Sword"]),
-        Tribute("Rue", 11, "url_r", {"strength": 2, "speed": 9, "stealth": 10, "aggression": 1}, proficient_items=["Camo Paint"])
+        Tribute("Katniss", 12, "url_k", {"strength": 4, "speed": 8, "intel": 7, "aggression": 3}, proficient_items=["Bow"], gender='F'),
+        Tribute("Peeta", 12, "url_p", {"strength": 8, "defense": 6, "intel": 4, "aggression": 2}, proficient_items=["Rock"], gender='M'),
+        Tribute("Cato", 2, "url_c", {"strength": 9, "speed": 6, "defense": 5, "aggression": 9}, proficient_items=["Sword"], gender='N'),
+        Tribute("Rue", 11, "url_r", {"strength": 2, "speed": 9, "stealth": 10, "aggression": 1}, proficient_items=["Camo Paint"], gender='F')
     ]
 
 def run_test():
@@ -52,7 +52,7 @@ def run_test():
         # Print Events
         for event in day['events']:
             # Add icons for readability
-            icon = "⚔️" if event['type'] == 'combat' else "🌲"
+            icon = "⚔️ " if event['type'] == 'combat' else "🌲"
             print(f"  {icon} {event['text']}")
         
         # Print Deaths

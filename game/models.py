@@ -1,5 +1,5 @@
 import random
-from typing import Optional, Union, Any 
+from typing import Literal, Optional, Union, Any 
 
 class Item:
     """Represents an object in the game (Weapon, Food, Utility)."""
@@ -31,10 +31,12 @@ class Tribute:
                 district: int, 
                 image_url: Optional[str]=None, 
                 stats: Optional[dict[str, float]]=None, 
-                proficient_items: Optional[list[str]]=None) -> None:
+                proficient_items: Optional[list[str]]=None,
+                gender: str = "N") -> None:
         self.name = name
         self.district = district
         self.image_url = image_url
+        self.gender = gender
         
         # Core Status
         self.alive: bool = True
@@ -60,6 +62,24 @@ class Tribute:
         
         # The specific items they are good with (e.g. "Bow")
         self.proficient_items = proficient_items if proficient_items else []
+
+    @property
+    def he_she(self) -> Literal['he'] | Literal['she'] | Literal['they']:
+        if self.gender == 'M': return "he"
+        if self.gender == 'F': return "she"
+        return "they"
+
+    @property
+    def him_her(self) -> Literal['him'] | Literal['her'] | Literal['them']:
+        if self.gender == 'M': return "him"
+        if self.gender == 'F': return "her"
+        return "them"
+
+    @property
+    def his_her(self) -> Literal['his'] | Literal['her'] | Literal['their']:
+        if self.gender == 'M': return "his"
+        if self.gender == 'F': return "her"
+        return "their"
 
     def get_effective_stat(self, stat_name: str)-> float:
         """
@@ -87,7 +107,7 @@ class Tribute:
         return round(val, 2)
 
     def take_damage(self, amount: float) -> None:
-        self.health -= amount
+        self.health -= abs(amount)
         if self.health <= 0:
             self.alive = False
             self.health = 0
@@ -98,6 +118,7 @@ class Tribute:
             "name": self.name,
             "district": self.district,
             "image_url": self.image_url,
+            "gender": self.gender,
             "stats": self.stats,
             "proficient_items": self.proficient_items,
             "status": {
@@ -118,7 +139,8 @@ class Tribute:
             district=data['district'], 
             image_url=data.get('image_url'), 
             stats=data.get('stats'), 
-            proficient_items=data.get('proficient_items')
+            proficient_items=data.get('proficient_items'),
+            gender=data.get('gender', 'N')
         )
         
         # Restore state if loading a save
@@ -132,6 +154,24 @@ class Tribute:
             t.inventory = [Item.from_dict(i) for i in data['inventory']]
             
         return t
+    
+def format_tribute_list(tributes: list[Tribute]) -> str:
+    """
+    Turns a list of Tribute objects into a readable string.
+    ['Katniss'] -> "Katniss"
+    ['Katniss', 'Peeta'] -> "Katniss and Peeta"
+    ['Katniss', 'Peeta', 'Cato'] -> "Katniss, Peeta and Cato"
+    """
+    if not tributes:
+        return "nobody"
+    
+    names = [t.name for t in tributes]
+    
+    if len(names) == 1:
+        return names[0]
+    
+    # Join all except the last with commas, then add " and " + the last one
+    return ", ".join(names[:-1]) + f" and {names[-1]}"
 
 
 class Alliance:

@@ -1,6 +1,6 @@
 import random
 from typing import LiteralString
-from .models import Tribute, Terrain
+from .models import Tribute, Terrain, Alliance, format_tribute_list
 
 class CombatResolver:
     """
@@ -18,8 +18,9 @@ class CombatResolver:
         # 1. ESCAPE PHASE
         # Check if defenders can run away
         if self._attempt_escape(attackers, defenders, terrain):
-            names = ", ".join([t.name for t in defenders])
-            return f"{names} managed to outrun the attackers!"
+            def_names = format_tribute_list(defenders)
+            att_names = format_tribute_list(attackers)
+            return f"{def_names} managed to outrun {att_names}!"
 
         # 2. BATTLE PHASE
         # Calculate raw power scores
@@ -58,13 +59,12 @@ class CombatResolver:
         # Defender needs higher speed + variance
         return (avg_speed_def + escape_bonus + roll) > avg_speed_att
 
-    def _calculate_group_power(self, group, mode) -> float:
+    def _calculate_group_power(self, group: list[Tribute], mode: str) -> float:
         """
         Sum of stats + Item Bonuses + RNG.
         mode: "attack" or "defense"
         """
         total_power = 0
-        
         for t in group:
             # Base Stat
             if mode == "attack":
@@ -77,9 +77,7 @@ class CombatResolver:
             # RNG Variance (The "Chaos Factor")
             # A d10 roll equivalent
             variance = random.randint(1, 10)
-            
             total_power += (base + variance)
-
         return total_power
 
     def _apply_outcome(self, winners: list[Tribute], losers: list[Tribute], margin: float) -> str:
@@ -97,7 +95,6 @@ class CombatResolver:
         # 2. Lethality Check (Aggression)
         # If the killer is aggressive, they might finish the job even if damage wasn't fatal
         is_fatal = False
-        
         victim.take_damage(damage)
         
         if not victim.alive:
@@ -112,12 +109,11 @@ class CombatResolver:
         if is_fatal and victim.inventory:
             stolen = victim.inventory.pop()
             killer.inventory.append(stolen)
-            loot_text = f" {killer.name} steals their {stolen.name}."
+            loot_text = f" {killer.name} steals {victim.his_her} {stolen.name}."
 
-        # 4. Return Text
         if is_fatal:
             killer.kills.append(victim.name)
-            return f"{killer.name} overpowers {victim.name} and kills them!{loot_text}"
+            return f"{killer.name} overpowers {victim.name} and kills {victim.him_her}!{loot_text}"
         else:
             victim.injured = True
-            return f"{killer.name} beats {victim.name} severely, but leaves them alive."
+            return f"{killer.name} beats {victim.name} severely, but leaves {victim.him_her} alive."

@@ -2,6 +2,7 @@ import random
 from .models import Tribute, Alliance, Item, Terrain
 from .events import EventManager
 from typing import Optional, Union, Any 
+from .models import format_tribute_list
 
 class GameEngine:
     def __init__(self, roster_data: Union[list[dict[str, Any]],list[Tribute]], terrain_config: Union[dict[str, Any], Terrain], rng_seed: int) -> None:
@@ -91,7 +92,7 @@ class GameEngine:
             "deaths_today": []
         }
         
-        # 1. Shuffle execution order so same people don't always go first
+        # 1. Shuffle execution order
         random.shuffle(self.alliances)
         
         # 2. Iterate through Groups
@@ -104,7 +105,7 @@ class GameEngine:
             if not alliance.is_active:
                 continue
                 
-            # Skip if any member already acted (merged into another group)
+            # Skip if any member already acted
             if any(t.name in processed_tributes for t in alliance.members):
                 continue
 
@@ -112,34 +113,65 @@ class GameEngine:
             for t in alliance.members:
                 processed_tributes.add(t.name)
 
+            # We capture the names because the event might chnage the group state
+            snapshot_members = list(alliance.members)
+            snapshot_names = [t.name for t in snapshot_members]
+            leader_image = snapshot_members[0].image_url if snapshot_members else None
+
             # --- THE CORE EVENT TRIGGER ---
             event = self.event_manager.select_event(alliance, self.terrain)
             
             if event:
+                # Execution might clear alliance.members (e.g. FormAlliance)
                 text = event.execute(alliance, self.terrain, game_engine_ref=self)
                 
-                # Log the event
+                # Log the event using the SNAPSHOT data
                 day_log["events"].append({
                     "text": text,
                     "type": event.tags[0] if event.tags else "misc",
-                    "tributes_involved": [t.name for t in alliance.members],
-                    "image": alliance.members[0].image_url # Display leader's face
+                    "tributes_involved": snapshot_names, 
+                    "image": leader_image # Display leader's face
                 })
             else:
                 # Fallback if no event matches (rare)
                 day_log["events"].append({
-                    "text": f"{alliance.members[0].name} sleeps through the day.",
+                    "text": f"{format_tribute_list(snapshot_members)} {'sleeps' if len(snapshot_members) == 1 else 'sleep'} through the day.",
                     "type": "idle",
-                    "tributes_involved": [t.name for t in alliance.members],
-                    "image": alliance.members[0].image_url
+                    "tributes_involved": snapshot_names,
+                    "image": leader_image
                 })
 
-        # 3. Process Alliance Changes (Merges/Splits)
+        # 3. Process Alliance Changes
         self._update_alliances()
+
+        if len(self.alliances) == 1 and len(self.alliances[0].members) > 1:
+            last_alliance = self.alliances[0]
+            
+            # 1. Distribute any shared items randomly so they aren't lost
+            if hasattr(last_alliance, 'shared_inventory') and last_alliance.shared_inventory:
+                for item in last_alliance.shared_inventory:
+                    random.choice(last_alliance.members).inventory.append(item)
+                last_alliance.shared_inventory = []
+
+            # 2. Capture names for logging
+            member_names = [t.name for t in last_alliance.members]
+            formatted_names = ", ".join(member_names)
+
+            # 3. Force Disband
+            # disband() returns a list of new single-person alliances
+            new_solos = last_alliance.disband()
+            self.alliances = new_solos
+
+            # 4. Log the Gamemaker Intervention
+            day_log["events"].append({
+                "text": f"Only {formatted_names} remain. The Gamemakers announce that there can be only one victor, forcing the alliance to turn on each other!",
+                "type": "gamemaker",
+                "tributes_involved": member_names,
+                "image": None
+            })
 
         # 4. Tally Deaths
         alive_now = self.get_alive_tributes()
-        
         dead_this_turn = [t.name for t in self.tributes if not t.alive and t.name not in self._get_previously_dead()]
         day_log["deaths_today"] = dead_this_turn
         

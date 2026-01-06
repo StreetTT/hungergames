@@ -20,5 +20,21 @@
         "tributes_needed": 2,
         "tags": ["social"],
         "weight": 10
+    },
+    {
+        "id": "healing",
+        "text": "{t1} is hurt. {He1} bandages {his1} wounds.",
+        "tributes_needed": 1,
+        "tags": ["medical"],
+        "weight": 10,
+        "effects": {"health": 5}
+    },
+    {
+        "id": "romantic_gesture",
+        "text": "{t1} looks at {t2} and tells {him2} that {he1} loves {him2}.",
+        "tributes_needed": 2,
+        "tags": ["romance"],
+        "weight": 5
     }
+
 ]
