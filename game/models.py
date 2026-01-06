@@ -99,7 +99,7 @@ class Tribute:
             "district": self.district,
             "image_url": self.image_url,
             "stats": self.stats,
-            "proficient_item_name": self.proficient_items,
+            "proficient_items": self.proficient_items,
             "status": {
                 "alive": self.alive,
                 "health": self.health,

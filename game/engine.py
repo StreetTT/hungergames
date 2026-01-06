@@ -1,10 +1,10 @@
 import random
-from .models import Tribute, Alliance, Item
+from .models import Tribute, Alliance, Item, Terrain
 from .events import EventManager
 from typing import Optional, Union, Any 
 
 class GameEngine:
-    def __init__(self, roster_data: dict[str, Any], terrain_config: dict[str, Any], rng_seed: str) -> None:
+    def __init__(self, roster_data: Union[list[dict[str, Any]],list[Tribute]], terrain_config: Union[dict[str, Any], Terrain], rng_seed: int) -> None:
         """
         roster_data: List of dicts (from serialized JSON)
         terrain_config: Dict (from serialized JSON)
