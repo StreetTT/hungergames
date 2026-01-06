@@ -38,8 +38,8 @@ class Tribute:
         
         # Core Status
         self.alive: bool = True
-        self.health: int = 100
-        self.max_health: int = 100
+        self.health: float = 100
+        self.max_health: float = 100
         self.injured: bool = False
         self.poisoned: bool = False 
         
@@ -86,7 +86,7 @@ class Tribute:
 
         return round(val, 2)
 
-    def take_damage(self, amount: int) -> None:
+    def take_damage(self, amount: float) -> None:
         self.health -= amount
         if self.health <= 0:
             self.alive = False

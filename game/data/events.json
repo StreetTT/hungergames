@@ -1,0 +1,24 @@
+[
+    {
+        "id": "trip_fall",
+        "text": "{t1} trips on a tree root and looks silly.",
+        "tributes_needed": 1,
+        "tags": ["forest", "funny"],
+        "weight": 10,
+        "effects": {"health": -5}
+    },
+    {
+        "id": "lake_swim",
+        "text": "{t1} goes for a swim to wash off the blood.",
+        "tributes_needed": 1,
+        "tags": ["water"],
+        "weight": 10
+    },
+    {
+        "id": "argument",
+        "text": "{t1} and {t2} get into a screaming match over supplies.",
+        "tributes_needed": 2,
+        "tags": ["social"],
+        "weight": 10
+    }
+]
