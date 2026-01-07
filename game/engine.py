@@ -159,7 +159,7 @@ class GameEngine:
                 needed_items.add(p_item)
 
         # 2. Check existence
-        for item_name in needed_items:
+        for item_name in sorted(list(needed_items)):
             # Check Infinite
             if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.infinite_items):
                 continue
