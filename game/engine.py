@@ -200,7 +200,8 @@ class GameEngine:
         day_log = {
             "day_number": self.day,
             "events": [],
-            "deaths_today": []
+            "deaths_today": [],
+            "alliance_snapshot": [] 
         }
         
         # 1. Shuffle execution order
@@ -255,6 +256,14 @@ class GameEngine:
         # 3. Process Alliance Changes
         self._update_alliances()
 
+        # If a tribute is alone, they should hold items in their personal inventory, not shared.
+        for alliance in self.alliances:
+            if len(alliance.members) == 1 and hasattr(alliance, 'shared_inventory') and alliance.shared_inventory:
+                member = alliance.members[0]
+                member.inventory.extend(alliance.shared_inventory)
+                alliance.shared_inventory = []
+
+        # --- SPECIAL RULE: Force Split if One Group Remains ---
         if len(self.alliances) == 1 and len(self.alliances[0].members) > 1:
             last_alliance = self.alliances[0]
             
@@ -286,7 +295,7 @@ class GameEngine:
         dead_this_turn = [t.name for t in self.tributes if not t.alive and t.name not in self._get_previously_dead()]
         day_log["deaths_today"] = dead_this_turn
         
-        # 5. ALLIANCE SNAPSHOT (The requested feature)
+        # 5. ALLIANCE SNAPSHOT
         # Capture the state of every active group at end of day
         snapshot = []
         for alliance in self.alliances:
