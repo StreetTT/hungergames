@@ -58,42 +58,118 @@ class GameEvent(ABC):
 class SimpleEvent(GameEvent):
     """
     Data-driven events loaded from JSON.
-    Example: "{T1} trips on a root."
+    Supports: Stats, Health, Status, Item Gain/Loss, and Item Requirements.
     """
     def __init__(self, data: dict[str,Any]) -> None:
         super().__init__(
             name=data.get('id', 'simple_event'),
             tags=data.get('tags', []),
             min_size=data.get('tributes_needed', 1),
-            max_size=data.get('tributes_needed', 1), # Simple events characterised by having a fixed size
+            max_size=data.get('tributes_needed', 1),
             weight=data.get('weight', 10)
         )
         self.text_template: str = data['text']
-        self.effects: dict[str, float] = data.get('effects', {}) # e.g., {'health': -10}
-        self.kills: list[int] = data.get('kills', [])     # List of indices [0, 1] who die
+        
+        # Stat/Health/Status Changes
+        self.effects: dict[str, float] = data.get('effects', {}) 
+        
+        # Death Logic
+        self.kills: list[int] = data.get('kills', [])
+        
+        # Item Logic
+        self.requires_item: Optional[str] = data.get('requires_item', None) # Name of item needed to trigger
+        self.gain_items: list[str] = data.get('gain_items', [])             # Names of items to receive
+        self.lose_items: list[str] = data.get('lose_items', [])             # Names of items to remove
+
+    def check_conditions(self, alliance: Alliance, terrain: Terrain) -> bool:
+        # 1. Standard checks (size, terrain)
+        if not super().check_conditions(alliance, terrain):
+            return False
+            
+        # 2. Item Requirement Check
+        if self.requires_item:
+            has_item = False
+            for member in alliance.members:
+                if any(i.name == self.requires_item for i in member.inventory):
+                    has_item = True
+                    break
+            if not has_item:
+                return False
+                
+        return True
 
     def execute(self, alliance, terrain, game_engine_ref=None):
-        actors = alliance.members
+        # 1. Filter Valid Actors
+        # If an item is required, we restrict the 'pool' of actors to those who have it.
+        if self.requires_item:
+            valid_actors = [
+                m for m in alliance.members 
+                if any(i.name == self.requires_item for i in m.inventory)
+            ]
+            # Fallback (Shouldn't happen due to check_conditions, but safety first)
+            if not valid_actors: valid_actors = alliance.members
+        else:
+            valid_actors = alliance.members
+
+        # Copy and shuffle so {t1} is random among valid candidates
+        actors = list(valid_actors)
+        random.shuffle(actors)
         
-        # 1. Apply State Changes
+        # 2. Apply Effects (Stats / Health / Status)
         for stat, value in self.effects.items():
             for actor in actors:
-                # If stat is 'health', modify it
                 if stat == 'health':
-                    actor.take_damage(value)
-                else:
-                    # TODO: Add more state updates
-                    pass
+                    if value < 0: actor.change_health(-value)
+                    else: actor.health = min(actor.max_health, actor.health + value)
+                        
+                elif stat in ['strength', 'intel', 'speed', 'defense', 'aggression', 'stealth']:
+                    if hasattr(actor, 'stats'):
+                        current = actor.stats.get(stat, 5)
+                        actor.stats[stat] = min(max(1, current + value), 10)
 
-        # 2. Process Deaths
+                elif stat in ['poisoned', 'injured']:
+                    
+                    is_active = (value > 0)
+                    if hasattr(actor, stat):
+                        setattr(actor, stat, is_active)
+
+        # 3. Item Loss
+        for item_name in self.lose_items:
+            for actor in actors:
+                # Find the item in inventory
+                match = next((i for i in actor.inventory if i.name == item_name), None)
+                if match:
+                    actor.inventory.remove(match)
+                    break 
+
+        # 4. Item Gain
+        if self.gain_items and game_engine_ref:
+            from .models import Item
+            
+            for item_name in self.gain_items:
+                # Find a prototype in the item pool
+                prototype = next((i for i in game_engine_ref.item_pool if i.name == item_name), None)
+                
+                if prototype:
+                    # Create a deep copy (or new instance) so we don't modify the pool
+                    new_item = Item(prototype.name, prototype.kind, prototype.bonuses)
+                    
+                    # Give to the main actor {t1}
+                    if actors:
+                        actors[0].inventory.append(new_item)
+                else:
+                    # Fallback if item name is wrong in JSON
+                    print(f"Warning: Event tried to give unknown item '{item_name}'")
+
+        # 5. Process Deaths
         dead_names = []
         for index in self.kills:
             if index < len(actors):
                 victim = actors[index]
-                victim.take_damage(999) # Force death
+                victim.change_health(-999) 
                 dead_names.append(victim.name)
 
-        # 3. Format Text
+        # 6. Format Text
         text = self.text_template
         for i, actor in enumerate(actors):
             idx = i + 1 
@@ -262,8 +338,8 @@ class FormAllianceEvent(GameEvent):
         friend_alliance.members = []
 
         return f"An alliance is formed! " \
-               f"{('The group of' + names_a) if len(names_a) > 2 else names_a} " \
-               f"joins forces with {('the group of' + names_b) if len(names_b) > 2 else names_b}."
+               f"{('The group of ' + names_a) if len(alliance.members) > 2 else names_a} " \
+               f"joins forces with {('the group of ' + names_b) if len(friend_alliance.members) > 2 else names_b}."
 
 
 class CombatEvent(GameEvent):

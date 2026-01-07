@@ -95,13 +95,13 @@ class CombatResolver:
         # 2. Lethality Check (Aggression)
         # If the killer is aggressive, they might finish the job even if damage wasn't fatal
         is_fatal = False
-        victim.take_damage(damage)
+        victim.change_health(-damage)
         
         if not victim.alive:
             is_fatal = True
         elif killer.stats['aggression'] > 7 and random.random() < 0.5:
              # Execution move
-             victim.take_damage(999) 
+             victim.change_health(-999) 
              is_fatal = True
 
         # 3. Looting

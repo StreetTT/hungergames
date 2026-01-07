@@ -106,8 +106,9 @@ class Tribute:
 
         return round(val, 2)
 
-    def take_damage(self, amount: float) -> None:
-        self.health -= abs(amount)
+    def change_health(self, amount: float) -> None:
+        self.health += amount
+        self.health = min(self.max_health, self.health)
         if self.health <= 0:
             self.alive = False
             self.health = 0

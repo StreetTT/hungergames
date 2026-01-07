@@ -22,19 +22,57 @@
         "weight": 10
     },
     {
-        "id": "healing",
-        "text": "{t1} is hurt. {He1} bandages {his1} wounds.",
-        "tributes_needed": 1,
-        "tags": ["medical"],
-        "weight": 10,
-        "effects": {"health": 5}
-    },
-    {
         "id": "romantic_gesture",
         "text": "{t1} looks at {t2} and tells {him2} that {he1} loves {him2}.",
         "tributes_needed": 2,
         "tags": ["romance"],
         "weight": 5
+    },
+    {
+        "id": "gain_sword",
+        "text": "{t1} stumbles upon an old cache and finds a Sword!",
+        "tags": ["idle", "forest"],
+        "tributes_needed": 1,
+        "gain_items": ["Sword"],
+        "effects": {
+            "strength": 1
+        },
+        "weight": 50
+    },
+    {
+        "id": "use_apple",
+        "text": "{t1} eats an Apple to recover strength.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "requires_item": "Apple",
+        "lose_items": ["Apple"],
+        "effects": {
+            "health": 5
+        },
+        "weight": 50
+    },
+    {
+        "id": "fail_medkit",
+        "text": "{t1} tries to use a Medkit but accidentally contaminates it, rendering it useless.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "requires_item": "Medkit",
+        "lose_items": ["Medkit"],
+        "effects": {
+            "intel": -1
+        },
+        "weight": 50
+    },
+    {
+        "id": "success_medkit",
+        "text": "{t1} uses a Medkit.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "requires_item": "Medkit",
+        "lose_items": ["Medkit"],
+        "effects": {
+            "health": 50
+        },
+        "weight": 50
     }
-
 ]
