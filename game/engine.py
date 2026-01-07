@@ -5,7 +5,6 @@ from typing import Optional, Union, Any
 
 class GameEngine:
     # --- MASTER ITEM LIBRARY ---
-    # Used to hydrate string references in Terrain or create defaults.
     ITEM_LIBRARY = [
         # -- Weapons (Melee) --
         {"item": Item("Sword", "weapon", {"strength": 3}), "qty": 2},
@@ -55,9 +54,8 @@ class GameEngine:
         # 1. Setup Randomness
         self.seed = rng_seed
         random.seed(self.seed)
-
-        # 2. Initialize Objects
-        # This safety check ensures we are working with Objects.
+        
+        # 2. Initialize Roster
         from .models import Tribute, Terrain # Local import to avoid circular dep
         
         self.tributes = []
@@ -83,7 +81,6 @@ class GameEngine:
         self._resolve_terrain_items()
 
         # 6. Initialize Item Pool (If empty)
-        # If the terrain was totally empty (no strings, no items), we load defaults.
         if not self.terrain.finite_items and not self.terrain.infinite_items:
             self._init_default_pool()
         
@@ -158,14 +155,10 @@ class GameEngine:
 
         # 2. Check existence
         for item_name in needed_items:
-            # Check Infinite
-            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.infinite_items):
-                continue
-            
-            # Check Finite
-            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.finite_items):
-                continue
+            if any(i.name == item_name for i in self.terrain.infinite_items): continue
+            if any(i.name == item_name for i in self.terrain.finite_items): continue
 
+            
             # Inject
             if item_name in lookup:
                 print(f"[GameMaker] Injecting 1x {item_name} for proficiency balance.")
@@ -292,6 +285,35 @@ class GameEngine:
         alive_now = self.get_alive_tributes()
         dead_this_turn = [t.name for t in self.tributes if not t.alive and t.name not in self._get_previously_dead()]
         day_log["deaths_today"] = dead_this_turn
+        
+        # 5. ALLIANCE SNAPSHOT (The requested feature)
+        # Capture the state of every active group at end of day
+        snapshot = []
+        for alliance in self.alliances:
+            if not alliance.is_active: continue
+            
+            group_data = {
+                "members": [],
+                "shared_inventory": [i.name for i in getattr(alliance, 'shared_inventory', [])]
+            }
+            
+            for t in alliance.members:
+                # Gather detailed info per member
+                member_status = []
+                if t.injured: member_status.append("Injured")
+                if t.poisoned: member_status.append("Poisoned")
+                
+                member_data = {
+                    "name": t.name,
+                    "health": round(t.health, 1),
+                    "inventory": [i.name for i in t.inventory],
+                    "status_effects": member_status
+                }
+                group_data["members"].append(member_data)
+            
+            snapshot.append(group_data)
+        
+        day_log["alliance_snapshot"] = snapshot
         
         self.game_log["timeline"].append(day_log)
 

@@ -9,149 +9,123 @@ from game.engine import GameEngine
 from game.models import Tribute, Terrain, Item
 
 def run_test_sim():
-    # 1. Setup Data
-    seed = 42 # Fixed seed for reproducibility
 
+    seed = 42 # Fixed seed for reproducibility
+    # ==========================================
+    # 1. SETUP ROSTER (24 TRIBUTES)
+    # ==========================================
     roster = [
-        # District 1 (Luxury)
-        Tribute("Marvel", 1, gender="M", proficient_items=["Spear"], stats={"strength": 8, "aggression": 7}),
-        Tribute("Glimmer", 1, gender="F", proficient_items=["Bow"], stats={"speed": 7, "aggression": 6}),
-        
-        # District 2 (Masonry - Career)
+        # District 1
+        Tribute("Marvel", 1, gender="M", proficient_items=["Spear"], stats={"strength": 8, "aggression": 7, "speed": 6}),
+        Tribute("Glimmer", 1, gender="F", proficient_items=["Bow"], stats={"speed": 7, "aggression": 6, "intel": 5}),
+        # District 2
         Tribute("Cato", 2, gender="M", proficient_items=["Sword"], stats={"strength": 9, "aggression": 9, "defense": 7}),
         Tribute("Clove", 2, gender="F", proficient_items=["Knife"], stats={"speed": 8, "stealth": 6, "aggression": 8}),
-        
-        # District 3 (Technology)
-        Tribute("Beetee", 3, gender="M", proficient_items=["Wire"], stats={"intel": 10, "strength": 3}),
-        Tribute("Wiress", 3, gender="F", proficient_items=["Tech"], stats={"intel": 9, "strength": 2}),
-        
-        # District 4 (Fishing - Career)
+        # District 3
+        Tribute("Beetee", 3, gender="M", proficient_items=["Wire"], stats={"intel": 10, "strength": 3, "defense": 4}),
+        Tribute("Wiress", 3, gender="F", proficient_items=["Tech"], stats={"intel": 9, "strength": 2, "stealth": 5}),
+        # District 4
         Tribute("Finnick", 4, gender="M", proficient_items=["Trident"], stats={"strength": 7, "speed": 8, "aggression": 6}),
-        Tribute("Mags", 4, gender="F", proficient_items=["Fishing Gear"], stats={"intel": 8, "speed": 2}),
-        
-        # District 5 (Power)
+        Tribute("Mags", 4, gender="F", proficient_items=["Fishing Gear"], stats={"intel": 8, "speed": 2, "stealth": 6}),
+        # District 5
         Tribute("Foxface", 5, gender="F", proficient_items=["Apple"], stats={"stealth": 10, "intel": 9, "speed": 7}),
-        Tribute("Hyde", 5, gender="M", proficient_items=["Knife"], stats={"stealth": 6, "intel": 6}),
-        
-        # District 6 (Transportation)
-        Tribute("Jason", 6, gender="M", proficient_items=["Camouflage"], stats={"speed": 6, "stealth": 7}),
-        Tribute("Kara", 6, gender="F", proficient_items=["Rope"], stats={"speed": 7, "defense": 5}),
-        
-        # District 7 (Lumber)
+        Tribute("Hyde", 5, gender="M", proficient_items=["Knife"], stats={"stealth": 6, "intel": 6, "aggression": 5}),
+        # District 6
+        Tribute("Jason", 6, gender="M", proficient_items=["Camouflage"], stats={"speed": 6, "stealth": 7, "intel": 5}),
+        Tribute("Kara", 6, gender="F", proficient_items=["Rope"], stats={"speed": 7, "defense": 5, "intel": 6}),
+        # District 7
         Tribute("Johanna", 7, gender="F", proficient_items=["Axe"], stats={"strength": 7, "aggression": 8, "defense": 6}),
-        Tribute("Blight", 7, gender="M", proficient_items=["Axe"], stats={"strength": 8, "speed": 4}),
-        
-        # District 8 (Textiles)
-        Tribute("Cecelia", 8, gender="F", proficient_items=["Needle"], stats={"intel": 6, "defense": 4}),
-        Tribute("Woof", 8, gender="M", proficient_items=["Fabric"], stats={"strength": 3, "defense": 2}),
-        
-        # District 9 (Grain)
-        Tribute("Grain Boy", 9, gender="M", proficient_items=["Sickle"], stats={"strength": 6, "speed": 6}),
-        Tribute("Grain Girl", 9, gender="F", proficient_items=["Sickle"], stats={"strength": 5, "speed": 7}),
-        
-        # District 10 (Livestock)
+        Tribute("Blight", 7, gender="M", proficient_items=["Axe"], stats={"strength": 8, "speed": 4, "defense": 5}),
+        # District 8
+        Tribute("Cecelia", 8, gender="F", proficient_items=["Needle"], stats={"intel": 6, "defense": 4, "speed": 5}),
+        Tribute("Woof", 8, gender="M", proficient_items=["Fabric"], stats={"strength": 3, "defense": 2, "intel": 4}),
+        # District 9
+        Tribute("Grain Boy", 9, gender="M", proficient_items=["Sickle"], stats={"strength": 6, "speed": 6, "aggression": 5}),
+        Tribute("Grain Girl", 9, gender="F", proficient_items=["Sickle"], stats={"strength": 5, "speed": 7, "stealth": 6}),
+        # District 10
         Tribute("Sokka", 10, gender="M", proficient_items=["Boomerang"], stats={"intel": 8, "aggression": 4, "speed": 6}),
         Tribute("Toph", 10, gender="F", proficient_items=["Rock"], stats={"strength": 9, "intel": 4, "stealth": 1}),
-        
-        # District 11 (Agriculture)
+        # District 11
         Tribute("Thresh", 11, gender="M", proficient_items=["Rock"], stats={"strength": 10, "aggression": 5, "speed": 4}),
         Tribute("Rue", 11, gender="F", proficient_items=["Slingshot"], stats={"stealth": 10, "speed": 9, "strength": 2}),
-        
-        # District 12 (Mining)
+        # District 12
         Tribute("Katniss", 12, gender="F", proficient_items=["Bow"], stats={"strength": 6, "speed": 8, "intel": 7}),
         Tribute("Peeta", 12, gender="M", proficient_items=["Rock"], stats={"strength": 8, "defense": 6, "intel": 5})
     ]
 
-    # Create Terrain (Empty item lists so Engine knows to populate them)
+    # ==========================================
+    # 2. SETUP TERRAIN
+    # ==========================================
     finite_loot = [
-        # --- Custom Unique Items (Objects) ---
+        # Custom Objects
         Item("Golden Cornucopia Sword", "weapon", {"strength": 6, "aggression": 3}),
         Item("Experimental Medkit", "medical", {"health": 50}),
-        
-        # --- Standard Library Items (Strings) ---
-        # The Engine will convert these into full objects automatically
-        "Trident",
-        "Bow",
-        "Axe",
-        "Spear",
-        "Mace",
-        "Sickle", 
-        "Boomerang", # Engine will generate a generic fallback for this since it's not in Library
-        "Sais",
-        "Night Vision",
-        "Clean Water",
-        "Explosive",
-        "Land Mine"
+        # Strings (Will be resolved by Engine)
+        "Trident", "Bow", "Axe", "Spear", "Mace", "Sickle", 
+        "Boomerang", "Sais", "Night Vision", "Clean Water", 
+        "Explosive", "Land Mine"
     ]
 
-    # INFINITE ITEMS (The "Factory")
     infinite_loot = [
-        # --- Standard Library Items (Strings) ---
-        "Rock",
-        "Apple",
-        "Camo Paint",
-        "Bandages",
-        
-        # --- Custom Infinite Item (Object) ---
-        # Maybe this arena has poisonous fog everywhere?
+        "Rock", "Apple", "Camo Paint", "Bandages",
         Item("Gas Mask", "misc", {"defense": 1})
     ]
 
     terrain = Terrain(
         name="Mixed Input Arena",
-        tag_multipliers={
-            "forest": 1.2, 
-            "water": 1.5,
-            "scavenge": 1.0, 
-            "combat": 1.1
-        },
-        finite_items=finite_loot,  
+        tag_multipliers={"forest": 1.2, "water": 1.5, "scavenge": 1.0, "combat": 1.1},
+        finite_items=finite_loot,
         infinite_items=infinite_loot
     )
 
-    # 2. Initialize Engine
-    # This will trigger _init_item_pool() inside the engine
-    print("--- ⚙️ INITIALIZING ENGINE ---")
+    # ==========================================
+    # 3. INITIALIZE & RUN
+    # ==========================================
+    print(f"--- ⚙️ INITIALIZING ENGINE with {len(roster)} Tributes ---")
     engine = GameEngine(roster, terrain, rng_seed=seed)
     
-    # 🕵️‍♂️ VERIFICATION: Print the item pools to prove injection worked
-    print("\n--- 🛠️ DEBUG: Item Pool Generation ---")
-    print(f"Finite Items (Deck): {{i.name: for i in engine.terrain.finite_items}}")
-    print(f"Infinite Items (Factory): {[i.name for i in engine.terrain.infinite_items]}")
-    print("--------------------------------------\n")
-
-    # 3. Simulate
     print(f"Seed: {seed}")
-    print(f"Tributes: {[t.name for t in roster]}")
     print("Simulating...")
-    
     result = engine.simulate()
 
-    # 4. Print Results (Using your requested format)
+    # 4. PRINT RESULTS
     print("\n--- 📜 GAME LOG ---")
     
     for day in result['timeline']:
         print(f"\n[DAY {day['day_number']}]")
         
-        # Print Events
+        # A. EVENTS
         for event in day['events']:
-            # Add icons for readability
-            if event['type'] == 'combat':
-                icon = "⚔️  " 
-            elif event['type'] == 'gamemaker':
-                icon = "📢 "
-            elif event['type'] == 'scavenge':
-                icon = "🎒 "
-            elif event['type'] == 'social':
-                icon = "🤝 "
-            else:
-                icon = "🌲 "
-                
+            icon_map = {
+                'combat': "⚔️ ", 'gamemaker': "📢 ", 'scavenge': "🎒 ",
+                'social': "🤝 ", 'death': "💀 ", 'crafting': "🔨 ", 'sponsor': "🎁 "
+            }
+            icon = icon_map.get(event['type'], "🌲 ")
             print(f"  {icon} {event['text']}")
         
-        # Print Deaths
+        # B. DEATHS
         if day['deaths_today']:
-            print(f"  💀  DEAD: {', '.join(day['deaths_today'])}")
+            print(f"  💀 DEAD: {', '.join(day['deaths_today'])}")
+
+        # C. ALLIANCE BREAKDOWN (NEW)
+        if "alliance_snapshot" in day:
+            print(f"  📊 STATUS REPORT:")
+            for idx, group in enumerate(day["alliance_snapshot"]):
+                members_str = []
+                for m in group["members"]:
+                    # Create status flags string e.g. "(Injured)"
+                    status_txt = f" ({', '.join(m['status_effects'])})" if m['status_effects'] else ""
+                    # Inventory string
+                    inv_txt = f"[{', '.join(m['inventory'])}]" if m['inventory'] else "[]"
+                    
+                    members_str.append(f"{m['name']} {m['health']}HP{status_txt} {inv_txt}")
+                
+                # Format shared inventory
+                shared_str = ""
+                if group["shared_inventory"]:
+                    shared_str = f" | 📦 SHARED: {', '.join(group['shared_inventory'])}"
+                    
+                print(f"    Group {idx+1}: {', '.join(members_str)}{shared_str}")
 
     print("\n-----------------------")
     print(f"🏆 WINNER: {result['meta']['winner']}")
