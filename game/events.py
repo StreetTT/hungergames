@@ -518,6 +518,112 @@ class ExtinctionPreventionEvent(GameEvent):
         
         return "Everyone is dead."
 
+class BloodbathEvent(GameEvent):
+    """
+    Day 1 Special: High chance of combat or finding weapons.
+    """
+    def __init__(self):
+        super().__init__("Bloodbath", ["combat", "scavenge"], min_size=1, max_size=99, weight=100)
+        self.combat_resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        tribute = alliance.members[0]
+        normalAggression = tribute.stats.get('aggression', 5)
+        tribute.stats['aggression'] = min(10, normalAggression + 3)
+
+        def performBloodbath() -> str:
+    
+            # 1. Decision: Flee, Gather, or Fight?
+            # Aggression and Speed influence this.
+            aggression = sum(t.stats.get('aggression', 5) for t in alliance.members) / len(alliance.members)
+            speed = sum(t.get_effective_stat('speed') for t in alliance.members) / len(alliance.members)
+            
+            roll = random.random() * 20
+            
+            # ACTION: FLEE (Default for low aggression)
+            if roll + speed > 15 and aggression < 6:
+                return f"{format_tribute_list(alliance.members)} runs away from the Cornucopia to safety."
+                
+            # ACTION: FIGHT (High aggression)
+            if roll + aggression > 12:
+                # Find a target
+                if game_engine_ref:
+                    potential_targets = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+                    if potential_targets:
+                        target = random.choice(potential_targets)
+                        return self.combat_resolver.resolve_fight(alliance, target, terrain)
+            
+            # ACTION: SCAVENGE (Default fallback or high roll)
+            # Bloodbath gives good items (Finite items)
+            found_item = None
+            if game_engine_ref and game_engine_ref.terrain.finite_items:
+                # Grab a finite item (Weapon/Good Gear)
+                idx = random.randrange(len(game_engine_ref.terrain.finite_items))
+                found_item = game_engine_ref.terrain.finite_items.pop(idx)
+            elif game_engine_ref and game_engine_ref.terrain.infinite_items:
+                # Fallback
+                proto = random.choice(game_engine_ref.terrain.infinite_items)
+                from .models import Item
+                found_item = Item(proto.name, proto.kind, proto.bonuses)
+                
+            if found_item:
+                if len(alliance.members) == 1: 
+                    alliance.members[0].inventory.append(found_item)
+                else:
+                    alliance.shared_inventory.append(found_item)
+                return f"{format_tribute_list(alliance.members)} grabs a {found_item.name} from the Cornucopia!"
+                
+            return f"{format_tribute_list(alliance.members)} tries to grab supplies but is pushed away."
+        text = performBloodbath()
+
+        tribute.stats['aggression'] = max(1, normalAggression)
+        return text
+
+class FeastEvent(GameEvent):
+    """
+    Triggered when population drops. High risk/reward.
+    """
+    def __init__(self):
+        super().__init__("The Feast", ["combat", "scavenge"], min_size=1, max_size=99, weight=100)
+        self.combat_resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        # 1. Decision: Go to Feast or Stay Away?
+        # Intel and Stealth influence this.
+        intel = sum(t.stats.get('intel', 5) for t in alliance.members) / len(alliance.members)
+        
+        # Smart characters might avoid it if they are healthy
+        if intel > 7 and all(t.health > 50 for t in alliance.members):
+            return f"{format_tribute_list(alliance.members)} decides the Feast is a trap and stays away."
+            
+        # 2. At the Feast
+        roll = random.random()
+        
+        # Combat Chance (High at feast)
+        if roll < 0.6 and game_engine_ref:
+             potential_targets = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+             if potential_targets:
+                 target = random.choice(potential_targets)
+                 return f"At the Feast, {self.combat_resolver.resolve_fight(alliance, target, terrain)}"
+        
+        # Loot Chance (Guaranteed good item if not fighting)
+        # Create a special "Feast Gift" or pull from finite
+        found_item = None
+        if game_engine_ref and game_engine_ref.terrain.finite_items:
+             idx = random.randrange(len(game_engine_ref.terrain.finite_items))
+             found_item = game_engine_ref.terrain.finite_items.pop(idx)
+        
+        if not found_item:
+            from .models import Item
+            found_item = Item("Feast Basket", "food", {"health": 50}) # Special full heal item
+            
+        if len(alliance.members) == 1: 
+            alliance.members[0].inventory.append(found_item)
+        else:
+            alliance.shared_inventory.append(found_item)
+            
+        return f"{format_tribute_list(alliance.members)} dashes into the Feast and grabs {found_item.name}!"
+
 class EventManager:
     """
     The Brain that picks events.

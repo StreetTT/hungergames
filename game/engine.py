@@ -1,6 +1,6 @@
 import random
 from .models import Tribute, Alliance, Item, Terrain, format_tribute_list
-from .events import EventManager, ForceSplitEvent, ExtinctionPreventionEvent
+from .events import EventManager, ForceSplitEvent, ExtinctionPreventionEvent, BloodbathEvent, FeastEvent
 from typing import Optional, Union, Any 
 
 class GameEngine:
@@ -88,7 +88,12 @@ class GameEngine:
         self._inject_proficiencies()
 
         # 8. Game State & Alliances
-        self.day = 0
+        self.day = -1
+        
+        # Tracking for Feast
+        self.initial_tribute_count = len(self.tributes)
+        self.feast_happened = False
+        
         self.game_log = {
             "meta": {"seed": self.seed, "winner": None},
             "timeline": []
@@ -197,6 +202,30 @@ class GameEngine:
 
         return self.game_log
 
+    def _resolve_sudden_death(self) -> None:
+        survivors = self.get_alive_tributes()
+        if len(survivors) <= 1: return
+        winner = random.choice(survivors)
+        day_log = { "day_number": "SUDDEN DEATH", "events": [], "deaths_today": [], "alliance_snapshot": [] }
+        for t in survivors:
+            if t != winner:
+                t.alive = False
+                t.health = 0
+                day_log["deaths_today"].append(t.name)
+                day_log["events"].append({
+                    "text": f"The Gamemakers trigger a localized disaster. {t.name} is consumed.",
+                    "type": "gamemaker",
+                    "tributes_involved": [t.name],
+                    "image": t.image_url
+                })
+        day_log["events"].append({
+            "text": f"{winner.name} is the only survivor of the disaster!",
+            "type": "gamemaker",
+            "tributes_involved": [winner.name],
+            "image": winner.image_url
+        })
+        self.game_log["timeline"].append(day_log)
+
     def run_day(self) -> None:
         """
         Processes one in-game day.
@@ -215,6 +244,38 @@ class GameEngine:
         # We copy the list because self.alliances might change during the loop (disbands/merges)
         current_groups = list(self.alliances)
         processed_tributes = set() # Track who has acted to prevent double turns
+        
+        # --- DETERMINE SPECIAL EVENT FOR THE DAY ---
+        forced_event_class = None
+        
+        # 1. Bloodbath (Day 0)
+        if self.day == 0:
+            day_log["day_name"] = 'THE BLOODBATH'
+            forced_event_class = BloodbathEvent
+            # Optional: Log the start of bloodbath
+            day_log["events"].append({
+                "text": "The Tributes stand on their podiums, the horn sounds. The Bloodbath begins!",
+                "type": "gamemaker",
+                "tributes_involved": [],
+                "image": None
+            })
+            
+        # 2. Feast (Population drops to a quarter, e.g. 25% remaining)
+        # Check if we hit the threshold
+        elif not self.feast_happened:
+            current_pop = len(self.get_alive_tributes())
+            threshold = int(self.initial_tribute_count * 0.25)
+            
+            if current_pop <= threshold:
+                day_log["day_name"] = 'THE FEAST'
+                forced_event_class = FeastEvent
+                self.feast_happened = True
+                day_log["events"].append({
+                    "text": "The Gamemakers announce a Feast at the Cornucopia! A chance for precious supplies.",
+                    "type": "gamemaker",
+                    "tributes_involved": [],
+                    "image": None
+                })
         
         for alliance in current_groups:
             # Skip if group was dissolved/merged by a previous event this turn
@@ -235,8 +296,12 @@ class GameEngine:
             leader_image = snapshot_members[0].image_url if snapshot_members else None
 
             # --- THE CORE EVENT TRIGGER ---
-            # Pass self.day to progressively increase combat weights
-            event = self.event_manager.select_event(alliance, self.terrain, self.day)
+            if forced_event_class:
+                # Force the special event logic
+                event = forced_event_class()
+            else:
+                # Standard Logic
+                event = self.event_manager.select_event(alliance, self.terrain, self.day)
             
             if event:
                 # Execution might clear alliance.members (e.g. FormAlliance)
@@ -268,7 +333,7 @@ class GameEngine:
                 member.inventory.extend(alliance.shared_inventory)
                 alliance.shared_inventory = []
 
-        # Force Split
+        # Force Split (if 1 group remains)
         if len(self.alliances) == 1 and len(self.alliances[0].members) > 1:
             target_alliance = self.alliances[0]
             member_names = [t.name for t in target_alliance.members]
@@ -283,7 +348,7 @@ class GameEngine:
                 "image": None
             })
 
-        # Extinction Check (Using new Event)
+        # Extinction Check
         alive_now = self.get_alive_tributes()
         if not alive_now:
             event = ExtinctionPreventionEvent()

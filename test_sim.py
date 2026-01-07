@@ -92,7 +92,8 @@ def run_test_sim():
     print("\n--- 📜 GAME LOG ---")
     
     for day in result['timeline']:
-        print(f"\n[DAY {day['day_number']}]")
+        dayHeadding = day.get('day_name', f"DAY {day['day_number']}")
+        print(f"\n[{dayHeadding}]")
         
         # A. EVENTS
         for event in day['events']:

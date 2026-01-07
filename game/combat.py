@@ -16,12 +16,12 @@ class CombatResolver:
         """
         attackers = attacker_alliance.members
         defenders = defender_alliance.members
+        def_names = format_tribute_list(defenders)
+        att_names = format_tribute_list(attackers)
 
         # 1. ESCAPE PHASE
         # Check if defenders can run away
         if self._attempt_escape(attackers, defenders, terrain):
-            def_names = format_tribute_list(defenders)
-            att_names = format_tribute_list(attackers)
             return f"{def_names} managed to outrun {att_names}!"
 
         # 2. BATTLE PHASE
@@ -37,7 +37,7 @@ class CombatResolver:
         elif margin < 0:
             return self._apply_outcome(winners=defender_alliance, losers=attacker_alliance, margin=abs(margin))
         else:
-            return "The two groups clash, but neither side gains the upper hand. They retreat tired."
+            return f"{att_names} clashes with {def_names}, but neither side gains the upper hand. Both retreat tired."
 
     def _attempt_escape(self, attackers: list[Tribute], defenders: list[Tribute], terrain: Terrain) -> bool:
         """
