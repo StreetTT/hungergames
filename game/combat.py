@@ -98,35 +98,43 @@ class CombatResolver:
         """
         Determines who gets hurt/killed based on the victory margin.
         """
-        # Identify key actors
+        # 1. Winners take chip damage (Combat is tiring!)
+        for w in winners.members:
+            chip_dmg = random.randint(2, 6)
+            w.change_health(-chip_dmg)
+
+        # 2. Identify key actors
         killer = max(winners.members, key=lambda x: x.stats['strength'])
         victim = min(losers.members, key=lambda x: x.health)
 
-        # 1. Calculate Damage
-        # Higher margin = more damage.
+        # 3. Calculate Damage to Loser
+        # Base damage + margin bonus
         damage = 15 + (margin * 2) 
         
-        # 2. Lethality Check (Aggression)
-        # If the killer is aggressive, they might finish the job even if damage wasn't fatal
-        is_fatal = False
+        # Apply Damage
         victim.change_health(-damage)
         
-        if not victim.alive:
-            is_fatal = True
-        elif killer.stats['aggression'] > 7 and random.random() < 0.5:
-             # Execution move
-             victim.change_health(-999) 
-             is_fatal = True
+        execution = False
+        death = False
 
-        # 3. Looting
+        # Check for Death by HP Depletion ("Bleeding Out")
+        if not victim.alive:
+            death = True
+        # Check for Execution (Aggressive killer finishes them off regardless of HP)
+        elif killer.stats['aggression'] > 7 and random.random() < 0.5:
+             victim.change_health(-999) 
+             death = True
+             execution = True
+
+        # 4. Looting Logic
         loot_text = ""
         stolen = None
         
         # Try stealing from personal inventory
-        if is_fatal and victim.inventory:
+        if death and victim.inventory:
             stolen = victim.inventory.pop()
         # Else try stealing from shared inventory
-        elif is_fatal and losers.shared_inventory:
+        elif death and losers.shared_inventory:
             stolen = losers.shared_inventory.pop()
             
         if stolen:
@@ -137,9 +145,13 @@ class CombatResolver:
                 winners.shared_inventory.append(stolen)
             loot_text = f" {killer.name} steals {stolen.name}."
 
-        if is_fatal:
+        # 5. Return Text
+        if execution:
             killer.kills.append(victim.name)
-            return f"{killer.name} overpowers {victim.name} and kills {victim.him_her}!{loot_text}"
+            return f"{killer.name} overpowers {victim.name} and executes {victim.him_her} brutal fashion!{loot_text}"
+        elif death:
+            killer.kills.append(victim.name)
+            return f"{killer.name} inflicts massive injuries on {victim.name}. {victim.name} bleeds out from the wounds.{loot_text}"
         else:
             victim.injured = True
             return f"{killer.name} beats {victim.name} severely, but leaves {victim.him_her} alive."

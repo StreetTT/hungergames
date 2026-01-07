@@ -98,7 +98,7 @@ def run_test_sim():
         # A. EVENTS
         for event in day['events']:
             icon_map = {
-                'combat': "⚔️ ", 'gamemaker': "📢 ", 'scavenge': "🎒 ",
+                'combat': "⚔️  ", 'gamemaker': "📢 ", 'scavenge': "🎒 ",
                 'social': "🤝 ", 'death': "💀 ", 'crafting': "🔨 ", 'sponsor': "🎁 "
             }
             icon = icon_map.get(event['type'], "🌲 ")

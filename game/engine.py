@@ -191,15 +191,13 @@ class GameEngine:
             
             # Safety break for infinite loops
             if self.day > 50:
+                self._resolve_sudden_death()
                 break
 
         # Determine Winner
         survivors = self.get_alive_tributes()
-        if survivors:
-            self.game_log["meta"]["winner"] = survivors[0].name
-        else:
-            self.game_log["meta"]["winner"] = "Nobody (Everyone died)"
-
+        if len(survivors) >= 1: self.game_log["meta"]["winner"] = survivors[0].name
+        else: self.game_log["meta"]["winner"] = "Nobody"
         return self.game_log
 
     def _resolve_sudden_death(self) -> None:
@@ -245,7 +243,7 @@ class GameEngine:
         current_groups = list(self.alliances)
         processed_tributes = set() # Track who has acted to prevent double turns
         
-        # --- DETERMINE SPECIAL EVENT FOR THE DAY ---
+        # --- SPECIAL EVENTS ---
         forced_event_class = None
         
         # 1. Bloodbath (Day 0)
@@ -333,7 +331,7 @@ class GameEngine:
                 member.inventory.extend(alliance.shared_inventory)
                 alliance.shared_inventory = []
 
-        # Force Split (if 1 group remains)
+        # Force Split
         if len(self.alliances) == 1 and len(self.alliances[0].members) > 1:
             target_alliance = self.alliances[0]
             member_names = [t.name for t in target_alliance.members]
@@ -358,20 +356,41 @@ class GameEngine:
             survivors = self.get_alive_tributes()
             involved = [s.name for s in survivors]
             img = survivors[0].image_url if survivors else None
+            day_log["events"].append({ "text": text, "type": "gamemaker", "tributes_involved": involved, "image": img })
+
+        # Process Status Effects
+        # This handles chronic "bleeding out" over time
+        for t in self.tributes:
+            if not t.alive: continue
             
-            day_log["events"].append({
-                "text": text,
-                "type": "gamemaker",
-                "tributes_involved": involved,
-                "image": img
-            })
+            # Poison Logic
+            if t.poisoned:
+                t.change_health(-14) # Heavy DOT
+                if not t.alive:
+                    day_log["events"].append({
+                        "text": f"{t.name} succumbs to the poison coursing through their veins.",
+                        "type": "death",
+                        "tributes_involved": [t.name],
+                        "image": t.image_url
+                    })
+            
+            # Injury Logic (Bleeding)
+            if t.alive and t.injured:
+                t.change_health(-7) # Standard DOT
+                if not t.alive:
+                    day_log["events"].append({
+                        "text": f"{t.name}'s untreated wounds prove fatal. They bleed out.",
+                        "type": "death",
+                        "tributes_involved": [t.name],
+                        "image": t.image_url
+                    })
 
         # 4. Tally Deaths
         alive_now = self.get_alive_tributes()
         dead_this_turn = [t.name for t in self.tributes if not t.alive and t.name not in self._get_previously_dead()]
         day_log["deaths_today"] = dead_this_turn
         
-        # 5. Alliance Snapshot
+        # 5. Snapshot
         snapshot = []
         for alliance in self.alliances:
             if not alliance.is_active: continue

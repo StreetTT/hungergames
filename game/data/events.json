@@ -75,8 +75,7 @@
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Medical Supplies"],
-        "effects": {"health": 10},
+        "effects": {"health": 10, "injured": 0, "poisoned": 0},
         "weight": 5
     },
     {
@@ -268,12 +267,12 @@
     },
     {
         "id": "death_poison_berries",
-        "text": "{t1} unknowingly eats toxic berries.",
+        "text": "{t1} unknowingly eats poisonous berries.",
         "tags": ["death", "forest"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "kills": [0],
+        "effects": {"health": -5, "poisoned": 1},
         "weight": 5
     },
     {
