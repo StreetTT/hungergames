@@ -625,34 +625,412 @@ class FeastEvent(GameEvent):
             
         return f"{format_tribute_list(alliance.members)} dashes into the Feast and grabs {found_item.name}!"
 
+class InterAllianceEvent(GameEvent):
+    """
+    Handles interactions between two specific groups (Trading, Spying, Stealing, etc.).
+    Defined in JSON with "type": "interaction".
+    """
+    def __init__(self, data: dict[str,Any]) -> None:
+        self.tributes_needed = data.get('tributes_needed', 1)
+        self.targets_needed = data.get('targets_needed', 1) # How many people from the other group are involved
+        
+        min_s = data.get('min_size', self.tributes_needed)
+        max_s = data.get('max_size', self.tributes_needed)
+
+        super().__init__(
+            name=data.get('id', 'interaction_event'),
+            tags=data.get('tags', []),
+            min_size=min_s,
+            max_size=max_s,
+            weight=data.get('weight', 10)
+        )
+        self.text_template: str = data['text']
+        
+        # Effects for the Active Group (The ones triggering the event)
+        self.effects: dict[str, float] = data.get('effects', {}) 
+        self.gain_items: list[str] = data.get('gain_items', [])
+        self.lose_items: list[str] = data.get('lose_items', [])
+        
+        # Effects for the Target Group (The ones being interacted with)
+        self.target_effects: dict[str, float] = data.get('target_effects', {})
+        self.target_gain_items: list[str] = data.get('target_gain_items', [])
+        self.target_lose_items: list[str] = data.get('target_lose_items', [])
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+
+        # 1. Find a Target Alliance
+        potential_targets = [
+            a for a in game_engine_ref.alliances 
+            if a != alliance and a.is_active and len(a.members) >= self.targets_needed
+        ]
+
+        if not potential_targets:
+            # Fallback if no valid targets exist
+            return f"{format_tribute_list(alliance.members)} looks for others but finds no one."
+
+        target_alliance = random.choice(potential_targets)
+
+        # 2. Select Actors (Active Group {t1})
+        active_members = list(alliance.members)
+        random.shuffle(active_members)
+        actors = active_members[:self.tributes_needed]
+
+        # 3. Select Targets (Target Group {e1})
+        target_members = list(target_alliance.members)
+        random.shuffle(target_members)
+        targets = target_members[:self.targets_needed]
+
+        # 4. Apply Logic to ACTORS
+        self._apply_logic(actors, alliance, self.effects, self.gain_items, self.lose_items, game_engine_ref)
+
+        # 5. Apply Logic to TARGETS
+        self._apply_logic(targets, target_alliance, self.target_effects, self.target_gain_items, self.target_lose_items, game_engine_ref)
+
+        # 6. Format Text
+        text = self.text_template
+        
+        # Replace {t1}... (Actors)
+        for i, actor in enumerate(actors):
+            idx = i + 1 
+            text = self._replace_pronouns(text, actor, f"t{idx}")
+
+        # Replace {e1}... (Enemies/Targets)
+        for i, target in enumerate(targets):
+            idx = i + 1
+            text = self._replace_pronouns(text, target, f"e{idx}")
+
+        return text
+
+    def _apply_logic(self, people, alliance_obj, effects, gains, losses, engine):
+        """Helper to apply stats and items to a specific list of people."""
+        from .models import Item
+        
+        # Effects
+        for stat, value in effects.items():
+            for p in people:
+                if stat == 'health':
+                    if value < 0: p.change_health(-abs(value))
+                    else: p.health = min(p.max_health, p.health + value)
+                elif stat in ['strength', 'intel', 'speed', 'defense', 'aggression', 'stealth']:
+                    if hasattr(p, 'stats'):
+                        current = p.stats.get(stat, 5)
+                        p.stats[stat] = min(max(1, current + value), 10)
+                elif stat in ['poisoned', 'injured']:
+                    is_active = (value > 0)
+                    if hasattr(p, stat): setattr(p, stat, is_active)
+
+        # Item Loss
+        for item_name in losses:
+            # Try personal inventory of first actor, then shared
+            removed = False
+            if people and people[0].inventory:
+                match = next((i for i in people[0].inventory if i.name == item_name), None)
+                if match:
+                    people[0].inventory.remove(match)
+                    removed = True
+            
+            if not removed and hasattr(alliance_obj, 'shared_inventory'):
+                match_shared = next((i for i in alliance_obj.shared_inventory if i.name == item_name), None)
+                if match_shared: alliance_obj.shared_inventory.remove(match_shared)
+
+        # Item Gain
+        for item_name in gains:
+            new_item = None
+            infinite_match = next((i for i in engine.terrain.infinite_items if i.name == item_name), None)
+            if infinite_match:
+                 new_item = Item(infinite_match.name, infinite_match.kind, infinite_match.bonuses)
+            else:
+                finite_idx = -1
+                for idx, i in enumerate(engine.terrain.finite_items):
+                    if i.name == item_name:
+                        finite_idx = idx
+                        break
+                if finite_idx != -1:
+                    new_item = engine.terrain.finite_items.pop(finite_idx)
+                else:
+                    new_item = Item(item_name, "misc")
+
+            if new_item:
+                if len(alliance_obj.members) == 1 and people:
+                    people[0].inventory.append(new_item)
+                else:
+                    alliance_obj.shared_inventory.append(new_item)
+
+    def _replace_pronouns(self, text, actor, prefix):
+        text = text.replace(f"{{{prefix}}}", actor.name)
+        if hasattr(actor, 'he_she'): 
+            text = text.replace(f"{{he_{prefix}}}", actor.he_she) \
+                       .replace(f"{{him_{prefix}}}", actor.him_her) \
+                       .replace(f"{{his_{prefix}}}", actor.his_her)
+            # Capitalized versions
+            text = text.replace(f"{{He_{prefix}}}", actor.he_she.capitalize()) \
+                       .replace(f"{{Him_{prefix}}}", actor.him_her.capitalize()) \
+                       .replace(f"{{His_{prefix}}}", actor.his_her.capitalize())
+        return text
+
+class CorpseLootEvent(GameEvent):
+    """
+    Scavenges items from tributes who have already died.
+    """
+    def __init__(self):
+        super().__init__("Loot Corpse", ["scavenge", "death"], min_size=1, max_size=99, weight=10)
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        
+        # Find dead bodies with loot
+        dead_with_loot = [t for t in game_engine_ref.tributes if not t.alive and t.inventory]
+        
+        if not dead_with_loot:
+            # Fallback to normal scavenge text if no bodies found
+            return f"{format_tribute_list(alliance.members)} searches for supplies but finds nothing."
+            
+        # Pick a body
+        body = random.choice(dead_with_loot)
+        item = body.inventory.pop()
+        
+        # Give to alliance
+        if len(alliance.members) == 1:
+            alliance.members[0].inventory.append(item)
+        else:
+            alliance.shared_inventory.append(item)
+            
+        return f"{format_tribute_list(alliance.members)} finds the body of {body.name} and loots a {item.name}."
+
+class AmicableTradeEvent(GameEvent):
+    """
+    Intra-Alliance Event: Two members of the SAME group swap/share items.
+    """
+    def __init__(self):
+        super().__init__("Share Supplies", ["social", "trade"], min_size=2, max_size=99, weight=10)
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if len(alliance.members) < 2: return "Logic error."
+        m1, m2 = random.sample(alliance.members, 2)
+        
+        # Helper: Find an item the tribute is NOT proficient with
+        def get_tradable_item(member):
+            for i, item in enumerate(member.inventory):
+                if item.name not in member.proficient_items:
+                    return member.inventory.pop(i)
+            return None
+        
+        item_from_m1 = get_tradable_item(m1)
+        item_from_m2 = get_tradable_item(m2)
+        
+        if item_from_m1 and item_from_m2:
+            # Swap
+            m1.inventory.append(item_from_m2)
+            m2.inventory.append(item_from_m1)
+            return f"{m1.name} and {m2.name} trade supplies, swapping {item_from_m1.name} for {item_from_m2.name}."
+            
+        elif item_from_m1:
+            # Give
+            m2.inventory.append(item_from_m1)
+            return f"{m1.name} gives {item_from_m1.name} to {m2.name}."
+            
+        elif item_from_m2:
+            # Give
+            m1.inventory.append(item_from_m2)
+            return f"{m2.name} gives {item_from_m2.name} to {m1.name}."
+            
+        return f"{m1.name} and {m2.name} discuss their inventory but have nothing they are willing to part with."
+
+class TenseTradeEvent(GameEvent):
+    """
+    Inter-Alliance Event: Two DIFFERENT groups meet to trade. Can go wrong (Ambush).
+    """
+    def __init__(self):
+        super().__init__("Tense Trade", ["social", "trade", "combat"], min_size=1, max_size=99, weight=8)
+        self.combat_resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        
+        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+        if not neighbors: return f"{format_tribute_list(alliance.members)} travels alone."
+        
+        target = random.choice(neighbors)
+        
+        # 1. Check Aggression (Ambush Chance)
+        my_aggro = sum(t.stats.get('aggression', 5) for t in alliance.members) / len(alliance.members)
+        their_aggro = sum(t.stats.get('aggression', 5) for t in target.members) / len(target.members)
+        
+        if (my_aggro > 7 or their_aggro > 7) and random.random() < 0.5:
+            return f"A trade deal between {format_tribute_list(alliance.members)} and {format_tribute_list(target.members)} goes wrong! {self.combat_resolver.resolve_fight(alliance, target, terrain, game_engine=game_engine_ref)}"
+        
+        # 2. Peaceful Inter-Alliance Trade (Swap shared items)
+        def get_item(grp):
+            # Shared items are fair game (assumed surplus)
+            if hasattr(grp, 'shared_inventory') and grp.shared_inventory: 
+                return grp.shared_inventory.pop()
+            
+            # Solo inventory: Check proficiency before trading
+            if grp.members:
+                member = grp.members[0]
+                for i, item in enumerate(member.inventory):
+                    if item.name not in member.proficient_items:
+                        return member.inventory.pop(i)
+            return None
+            
+        my_item = get_item(alliance)
+        their_item = get_item(target)
+        
+        if my_item and their_item:
+            # Swap
+            if len(alliance.members) == 1: alliance.members[0].inventory.append(their_item)
+            else: alliance.shared_inventory.append(their_item)
+            
+            if len(target.members) == 1: target.members[0].inventory.append(my_item)
+            else: target.shared_inventory.append(my_item)
+            return f"{format_tribute_list(alliance.members)} meets {format_tribute_list(target.members)} and trades {my_item.name} for {their_item.name}."
+            
+        # Refund if trade failed (one side had nothing to give)
+        if my_item: 
+            if len(alliance.members) == 1: alliance.members[0].inventory.append(my_item)
+            else: alliance.shared_inventory.append(my_item)
+        if their_item:
+            if len(target.members) == 1: target.members[0].inventory.append(their_item)
+            else: target.shared_inventory.append(their_item)
+            
+        return f"{format_tribute_list(alliance.members)} meets {format_tribute_list(target.members)} to trade, but neither side is willing to part with their gear."
+
+class ThiefEvent(GameEvent):
+    """
+    Theft Interaction: Success or Fail (No Fight).
+    """
+    def __init__(self):
+        super().__init__("Thief", ["scavenge", "stealth"], min_size=1, max_size=99, weight=8)
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+        if not neighbors: return f"{format_tribute_list(alliance.members)} sneaks around but finds no one."
+        
+        target = random.choice(neighbors)
+        
+        # Stealth vs Intel check
+        my_stealth = max(t.get_effective_stat('stealth') for t in alliance.members)
+        their_intel = max(t.get_effective_stat('intel') for t in target.members)
+        
+        if my_stealth + random.randint(1, 10) > their_intel + random.randint(1, 10):
+            # SUCCESS
+            stolen = None
+            if target.members[0].inventory: stolen = target.members[0].inventory.pop(0)
+            elif hasattr(target, 'shared_inventory') and target.shared_inventory: stolen = target.shared_inventory.pop(0)
+            
+            if stolen:
+                if len(alliance.members) == 1: alliance.members[0].inventory.append(stolen)
+                else: alliance.shared_inventory.append(stolen)
+                return f"{format_tribute_list(alliance.members)} sneaks into {format_tribute_list(target.members)}'s camp and steals a {stolen.name}!"
+            else:
+                return f"{format_tribute_list(alliance.members)} raids {format_tribute_list(target.members)}'s camp but finds nothing to steal."
+        else:
+            # FAIL
+            return f"{format_tribute_list(alliance.members)} tries to steal from {format_tribute_list(target.members)} but is caught and forced to flee empty-handed."
+
+class RiskyTheftEvent(GameEvent):
+    """
+    Complex Theft: Low Success, Failure = Combat.
+    """
+    def __init__(self):
+        super().__init__("High Stakes Theft", ["scavenge", "stealth", "combat"], min_size=1, max_size=99, weight=5)
+        self.combat_resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+        if not neighbors: return f"{format_tribute_list(alliance.members)} stalks the shadows alone."
+        
+        target = random.choice(neighbors)
+        
+        # Harder check: Stealth vs Intel + 5
+        my_stealth = max(t.get_effective_stat('stealth') for t in alliance.members)
+        their_intel = max(t.get_effective_stat('intel') for t in target.members)
+        
+        if my_stealth + random.randint(1, 10) > their_intel + 5 + random.randint(1, 10):
+            # SUCCESS (Steal 2 items or 1 good one)
+            stolen_items = []
+            # Try to take up to 2 items
+            for _ in range(2):
+                item = None
+                if target.members[0].inventory: item = target.members[0].inventory.pop(0)
+                elif hasattr(target, 'shared_inventory') and target.shared_inventory: item = target.shared_inventory.pop(0)
+                if item: stolen_items.append(item)
+            
+            if stolen_items:
+                for i in stolen_items:
+                    if len(alliance.members) == 1: alliance.members[0].inventory.append(i)
+                    else: alliance.shared_inventory.append(i)
+                item_names = ", ".join([i.name for i in stolen_items])
+                return f"{format_tribute_list(alliance.members)} pulls off a master heist, stealing {item_names} from {format_tribute_list(target.members)}!"
+            else:
+                return f"{format_tribute_list(alliance.members)} infiltrates {format_tribute_list(target.members)}'s camp but they have nothing left."
+        else:
+            # FAIL -> COMBAT
+            return f"{format_tribute_list(alliance.members)} is caught trying to steal from {format_tribute_list(target.members)}! {self.combat_resolver.resolve_fight(target, alliance, terrain, game_engine=game_engine_ref)}"
+
+class SpyEvent(GameEvent):
+    """
+    Spy Interaction: Success (Intel Gain) or Fail (Combat).
+    """
+    def __init__(self):
+        super().__init__("Spy", ["stealth", "intel"], min_size=1, max_size=99, weight=8)
+        self.combat_resolver = CombatResolver()
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
+        if not neighbors: return f"{format_tribute_list(alliance.members)} watches the horizon."
+        
+        target = random.choice(neighbors)
+        
+        my_stealth = max(t.get_effective_stat('stealth') for t in alliance.members)
+        their_perception = max(t.get_effective_stat('intel') for t in target.members)
+        
+        if my_stealth + random.randint(1, 10) > their_perception + random.randint(1, 10):
+            # SUCCESS
+            for t in alliance.members:
+                t.stats['intel'] = min(10, t.stats['intel'] + 1)
+            return f"{format_tribute_list(alliance.members)} spies on {format_tribute_list(target.members)}, learning valuable information."
+        else:
+            # FAIL -> COMBAT (Target attacks Spy)
+            return f"{format_tribute_list(alliance.members)} is spotted spying on {format_tribute_list(target.members)}! {self.combat_resolver.resolve_fight(target, alliance, terrain, game_engine=game_engine_ref)}"
+
 class EventManager:
     """
     The Brain that picks events.
     """
     def __init__(self) -> None:
         self.events = []
-        
+
         # 1. Load Hardcoded Complex Events
         self.events.append(ScavengeEvent())
         self.events.append(AmicableDisbandEvent())
         self.events.append(FormAllianceEvent())
-        self.events.append(CombatEvent()) 
+        self.events.append(CombatEvent())
+        self.events.append(CorpseLootEvent())
+        self.events.append(AmicableTradeEvent())
+        self.events.append(TenseTradeEvent())
+        self.events.append(ThiefEvent())
+        self.events.append(RiskyTheftEvent())
+        self.events.append(SpyEvent())
         
         # 2. Load JSON Events
         self.load_json_events()
 
     def load_json_events(self) -> None:
-        """Loads simple text events from data/events.json"""
         path = os.path.join(os.path.dirname(__file__), 'data', 'events.json')
-        if not os.path.exists(path):
-            print("Warning: No events.json found.")
-            return
-
+        if not os.path.exists(path): return
         with open(path, 'r') as f:
             data = json.load(f)
             
         for e_data in data:
-            self.events.append(SimpleEvent(e_data))
+            if e_data.get("type") == "interaction":
+                self.events.append(InterAllianceEvent(e_data))
+            else:
+                self.events.append(SimpleEvent(e_data))
 
     def select_event(self, alliance: Alliance, terrain: Terrain, day: int = 1) -> Optional[GameEvent]:
         """
@@ -660,15 +1038,11 @@ class EventManager:
         """
         valid_events = []
         weights = []
-        
         for event in self.events:
             if event.check_conditions(alliance, terrain):
                 w = event.get_adjusted_weight(terrain, day)
                 if w > 0:
                     valid_events.append(event)
                     weights.append(w)
-                    
-        if not valid_events:
-            return None # Should handle "Uneventful day" elsewhere
-            
+        if not valid_events: return None
         return random.choices(valid_events, weights=weights, k=1)[0]

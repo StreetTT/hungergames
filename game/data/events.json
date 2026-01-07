@@ -294,5 +294,48 @@
         "max_size": 6,
         "kills": [0, 1, 2],
         "weight": 1
+    },
+    {
+        "id": "spy_on_camp",
+        "type": "interaction",
+        "text": "{t1} spies on {e1}'s camp, learning their habits.",
+        "tags": ["stealth", "forest"],
+        "tributes_needed": 1,
+        "targets_needed": 1,
+        "weight": 10,
+        "effects": {
+            "intel": 1
+        }
+    },
+    {
+        "id": "steal_supplies_interaction",
+        "type": "interaction",
+        "text": "{t1} sneaks into {e1}'s shelter and steals supplies while {he_e1} sleeps.",
+        "tags": ["stealth", "scavenge"],
+        "tributes_needed": 1,
+        "targets_needed": 1,
+        "weight": 8,
+        "gain_items": ["Fresh Food"],
+        "target_lose_items": ["Fresh Food", "Apple"] 
+    },
+    {
+        "id": "uneasy_truce",
+        "type": "interaction",
+        "text": "{t1} and {e1} cross paths but decide to ignore each other for now.",
+        "tags": ["social"],
+        "tributes_needed": 1,
+        "targets_needed": 1,
+        "weight": 10
+    },
+    {
+        "id": "distant_taunt",
+        "type": "interaction",
+        "text": "{t1} shouts insults at {e1} from a safe distance.",
+        "tags": ["social"],
+        "tributes_needed": 1,
+        "targets_needed": 1,
+        "weight": 5,
+        "effects": {"aggression": 1},
+        "target_effects": {"aggression": 1}
     }
 ]
