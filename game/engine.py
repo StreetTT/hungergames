@@ -204,7 +204,7 @@ class GameEngine:
         survivors = self.get_alive_tributes()
         if len(survivors) <= 1: return
         winner = random.choice(survivors)
-        day_log = { "day_number": "SUDDEN DEATH", "events": [], "deaths_today": [], "alliance_snapshot": [] }
+        day_log = { "day_number": self.day, "day_name": "SUDDEN DEATH", "events": [], "deaths_today": [], "alliance_snapshot": [] }
         for t in survivors:
             if t != winner:
                 t.alive = False

@@ -463,10 +463,11 @@ class CombatEvent(GameEvent):
         # Pick a random enemy group
         enemy_alliance = random.choice(potential_targets)
 
-        result_text = self.resolver.resolve_fight(
+        return self.resolver.resolve_fight(
             attacker_alliance=alliance, 
             defender_alliance=enemy_alliance, 
-            terrain=terrain
+            terrain=terrain,
+            game_engine=game_engine_ref
         )
 
         return result_text
@@ -551,7 +552,7 @@ class BloodbathEvent(GameEvent):
                     potential_targets = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
                     if potential_targets:
                         target = random.choice(potential_targets)
-                        return self.combat_resolver.resolve_fight(alliance, target, terrain)
+                        return self.combat_resolver.resolve_fight(alliance, target, terrain, game_engine=game_engine_ref)
             
             # ACTION: SCAVENGE (Default fallback or high roll)
             # Bloodbath gives good items (Finite items)
@@ -604,7 +605,7 @@ class FeastEvent(GameEvent):
              potential_targets = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
              if potential_targets:
                  target = random.choice(potential_targets)
-                 return f"At the Feast, {self.combat_resolver.resolve_fight(alliance, target, terrain)}"
+                 return f"At the Feast, {self.combat_resolver.resolve_fight(alliance, target, terrain, game_engine=game_engine_ref)}"
         
         # Loot Chance (Guaranteed good item if not fighting)
         # Create a special "Feast Gift" or pull from finite
