@@ -137,7 +137,7 @@ def run_test_sim():
         for event in day['events']:
             # Add icons for readability
             if event['type'] == 'combat':
-                icon = "⚔️ " 
+                icon = "⚔️  " 
             elif event['type'] == 'gamemaker':
                 icon = "📢 "
             elif event['type'] == 'scavenge':
@@ -151,7 +151,7 @@ def run_test_sim():
         
         # Print Deaths
         if day['deaths_today']:
-            print(f"  💀 DEAD: {', '.join(day['deaths_today'])}")
+            print(f"  💀  DEAD: {', '.join(day['deaths_today'])}")
 
     print("\n-----------------------")
     print(f"🏆 WINNER: {result['meta']['winner']}")

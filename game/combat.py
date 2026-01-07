@@ -5,16 +5,18 @@ from .models import Tribute, Terrain, Alliance, format_tribute_list
 class CombatResolver:
     """
     Handles the math for fights.
-    Separated from Events to keep code clean.
     """
     def __init__(self) -> None:
         pass
 
-    def resolve_fight(self, attackers: list[Tribute], defenders: list[Tribute], terrain: Terrain) -> str:
+    def resolve_fight(self, attacker_alliance: Alliance, defender_alliance: Alliance, terrain: Terrain) -> str:
         """
         Main entry point.
-        Returns: String (Log text describing the result)
+        Calculates outcome based on members AND shared inventory of the alliances.
         """
+        attackers = attacker_alliance.members
+        defenders = defender_alliance.members
+
         # 1. ESCAPE PHASE
         # Check if defenders can run away
         if self._attempt_escape(attackers, defenders, terrain):
@@ -23,28 +25,27 @@ class CombatResolver:
             return f"{def_names} managed to outrun {att_names}!"
 
         # 2. BATTLE PHASE
-        # Calculate raw power scores
-        att_score = self._calculate_group_power(attackers, "attack")
-        def_score = self._calculate_group_power(defenders, "defense")
+        # Pass the full alliance to access shared inventory
+        att_score = self._calculate_group_power(attacker_alliance, "attack")
+        def_score = self._calculate_group_power(defender_alliance, "defense")
 
         # 3. RESOLUTION
         margin = att_score - def_score
         
         if margin > 0:
-            # Attackers Win
-            return self._apply_outcome(winners=attackers, losers=defenders, margin=margin)
+            return self._apply_outcome(winners=attacker_alliance, losers=defender_alliance, margin=margin)
         elif margin < 0:
-            # Defenders Win (Counter-attack)
-            return self._apply_outcome(winners=defenders, losers=attackers, margin=abs(margin))
+            return self._apply_outcome(winners=defender_alliance, losers=attacker_alliance, margin=abs(margin))
         else:
-            # Tie
             return "The two groups clash, but neither side gains the upper hand. They retreat tired."
 
-    def _attempt_escape(self, attackers, defenders, terrain) -> bool:
+    def _attempt_escape(self, attackers: list[Tribute], defenders: list[Tribute], terrain: Terrain) -> bool:
         """
         Compare average speeds. Returns True if defenders escape.
         """
         # Calculate average speed of groups
+        if not attackers or not defenders: return False
+        
         avg_speed_att = sum(t.get_effective_stat('speed') for t in attackers) / len(attackers)
         avg_speed_def = sum(t.get_effective_stat('speed') for t in defenders) / len(defenders)
 
@@ -59,14 +60,15 @@ class CombatResolver:
         # Defender needs higher speed + variance
         return (avg_speed_def + escape_bonus + roll) > avg_speed_att
 
-    def _calculate_group_power(self, group: list[Tribute], mode: str) -> float:
+    def _calculate_group_power(self, alliance: Alliance, mode: str) -> float:
         """
-        Sum of stats + Item Bonuses + RNG.
+        Sum of stats + Item Bonuses (Personal & Shared) + RNG.
         mode: "attack" or "defense"
         """
-        total_power = 0
-        for t in group:
-            # Base Stat
+        total_power = 0.0
+        
+        # 1. Member Base Stats + Personal Items
+        for t in alliance.members:
             if mode == "attack":
                 # Strength + Aggression + small Intel bonus
                 base = t.get_effective_stat("strength") + (t.stats["aggression"] * 0.5)
@@ -78,15 +80,27 @@ class CombatResolver:
             # A d10 roll equivalent
             variance = random.randint(1, 10)
             total_power += (base + variance)
+
+        # 2. Shared Inventory Bonuses
+        # We add the raw stat values from shared items to the group total
+        if hasattr(alliance, 'shared_inventory'):
+            for item in alliance.shared_inventory:
+                if mode == "attack":
+                    # Attack power from shared weapons
+                    total_power += item.bonuses.get('strength', 0)
+                else:
+                    # Defense power from shared armor/shields
+                    total_power += item.bonuses.get('defense', 0)
+
         return total_power
 
-    def _apply_outcome(self, winners: list[Tribute], losers: list[Tribute], margin: float) -> str:
+    def _apply_outcome(self, winners: Alliance, losers: Alliance, margin: float) -> str:
         """
         Determines who gets hurt/killed based on the victory margin.
         """
         # Identify key actors
-        killer = max(winners, key=lambda x: x.stats['strength'])
-        victim = min(losers, key=lambda x: x.health) # Weakest link targeted first
+        killer = max(winners.members, key=lambda x: x.stats['strength'])
+        victim = min(losers.members, key=lambda x: x.health)
 
         # 1. Calculate Damage
         # Higher margin = more damage.
@@ -106,10 +120,22 @@ class CombatResolver:
 
         # 3. Looting
         loot_text = ""
+        stolen = None
+        
+        # Try stealing from personal inventory
         if is_fatal and victim.inventory:
             stolen = victim.inventory.pop()
-            killer.inventory.append(stolen)
-            loot_text = f" {killer.name} steals {victim.his_her} {stolen.name}."
+        # Else try stealing from shared inventory
+        elif is_fatal and losers.shared_inventory:
+            stolen = losers.shared_inventory.pop()
+            
+        if stolen:
+            # If solo, personal; if group, shared
+            if len(winners.members) == 1:
+                killer.inventory.append(stolen)
+            else:
+                winners.shared_inventory.append(stolen)
+            loot_text = f" {killer.name} steals {stolen.name}."
 
         if is_fatal:
             killer.kills.append(victim.name)

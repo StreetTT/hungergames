@@ -1,93 +1,39 @@
 [
     {
-        "id": "trip_fall",
-        "text": "{t1} trips on a tree root and looks silly.",
+        "id": "hunt_solo",
+        "text": "{t1} goes hunting.",
+        "tags": ["forest"],
         "tributes_needed": 1,
-        "tags": ["forest", "funny"],
-        "weight": 10,
-        "effects": {"health": -5}
-    },
-    {
-        "id": "lake_swim",
-        "text": "{t1} goes for a swim to wash off the blood.",
-        "tributes_needed": 1,
-        "tags": ["water"],
+        "min_size": 1,
+        "max_size": 6,
         "weight": 10
-    },
-    {
-        "id": "argument",
-        "text": "{t1} and {t2} get into a screaming match over supplies.",
-        "tributes_needed": 2,
-        "tags": ["social"],
-        "weight": 10
-    },
-    {
-        "id": "romantic_gesture",
-        "text": "{t1} looks at {t2} and tells {him2} that {he1} loves {him2}.",
-        "tributes_needed": 2,
-        "tags": ["romance"],
-        "weight": 5
-    },
-    {
-        "id": "gain_sword",
-        "text": "{t1} stumbles upon an old cache and finds a Sword!",
-        "tags": ["idle", "forest"],
-        "tributes_needed": 1,
-        "gain_items": ["Sword"],
-        "effects": {
-            "strength": 1
-        },
-        "weight": 50
-    },
-    {
-        "id": "use_apple",
-        "text": "{t1} eats an Apple to recover strength.",
-        "tags": ["idle"],
-        "tributes_needed": 1,
-        "requires_item": "Apple",
-        "lose_items": ["Apple"],
-        "effects": {
-            "health": 5
-        },
-        "weight": 50
-    },
-    {
-        "id": "fail_medkit",
-        "text": "{t1} tries to use a Medkit but accidentally contaminates it, rendering it useless.",
-        "tags": ["idle"],
-        "tributes_needed": 1,
-        "requires_item": "Medkit",
-        "lose_items": ["Medkit"],
-        "effects": {
-            "intel": -1
-        },
-        "weight": 50
-    },
-    {
-        "id": "success_medkit",
-        "text": "{t1} uses a Medkit.",
-        "tags": ["idle"],
-        "tributes_needed": 1,
-        "requires_item": "Medkit",
-        "lose_items": ["Medkit"],
-        "effects": {
-            "health": 50
-        },
-        "weight": 50
     },
     {
         "id": "injure_self",
         "text": "{t1} injures {him1}self.",
         "tags": ["idle"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "effects": {"health": -10, "injured": 1},
         "weight": 5
+    },
+    {
+        "id": "scare",
+        "text": "{t1} scares {t2}.",
+        "tags": ["social"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 10
     },
     {
         "id": "craft_spear",
         "text": "{t1} makes a wooden spear.",
         "tags": ["forest", "crafting"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Wooden Spear"],
         "weight": 5
     },
@@ -96,6 +42,8 @@
         "text": "{t1} collects fruit from a tree.",
         "tags": ["forest"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Fruit"],
         "weight": 10
     },
@@ -104,6 +52,8 @@
         "text": "{t1} receives a hatchet from an unknown sponsor.",
         "tags": ["sponsor"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Hatchet"],
         "weight": 5
     },
@@ -112,6 +62,8 @@
         "text": "{t1} receives clean water from an unknown sponsor.",
         "tags": ["sponsor"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Clean Water"],
         "effects": {"health": 5},
         "weight": 5
@@ -121,6 +73,8 @@
         "text": "{t1} receives medical supplies from an unknown sponsor.",
         "tags": ["sponsor"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Medical Supplies"],
         "effects": {"health": 10},
         "weight": 5
@@ -130,6 +84,8 @@
         "text": "{t1} makes a slingshot.",
         "tags": ["crafting"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Slingshot"],
         "weight": 5
     },
@@ -138,6 +94,8 @@
         "text": "{t1} receives an explosive from an unknown sponsor.",
         "tags": ["sponsor"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "gain_items": ["Explosive"],
         "weight": 2
     },
@@ -146,6 +104,8 @@
         "text": "{t1} questions {his1} sanity.",
         "tags": ["idle"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "effects": {"intel": -1},
         "weight": 5
     },
@@ -154,6 +114,8 @@
         "text": "{t1} starts a fire.",
         "tags": ["night"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "weight": 10
     },
     {
@@ -161,6 +123,8 @@
         "text": "{t1} convinces {t2} to snuggle with {him1}.",
         "tags": ["night", "social"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "effects": {"health": 5},
         "weight": 5
     },
@@ -169,6 +133,8 @@
         "text": "{t1}, {t2}, {t3}, and {t4} tell each other ghost stories to lighten the mood.",
         "tags": ["night", "social"],
         "tributes_needed": 4,
+        "min_size": 4,
+        "max_size": 6,
         "weight": 5
     },
     {
@@ -176,6 +142,19 @@
         "text": "{t1} catches {t2} off guard and kills {him2}.",
         "tags": ["death"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "kills": [1],
+        "weight": 10
+    },
+    {
+        "id": "kill_knife_throw",
+        "text": "{t1} throws a knife into {t2}'s head.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "requires_item": "Knife",
         "kills": [1],
         "weight": 10
     },
@@ -184,6 +163,8 @@
         "text": "{t1} begs for {t2} to kill {him1}. {t2} reluctantly obliges, killing {t1}.",
         "tags": ["death", "social"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "kills": [0],
         "weight": 2
     },
@@ -192,6 +173,8 @@
         "text": "{t1} and {t2} work together to drown {t3}.",
         "tags": ["death", "water"],
         "tributes_needed": 3,
+        "min_size": 3,
+        "max_size": 6,
         "kills": [2],
         "weight": 5
     },
@@ -200,6 +183,8 @@
         "text": "{t1}, {t2}, {t3}, and {t4} form a suicide pact, killing themselves.",
         "tags": ["death"],
         "tributes_needed": 4,
+        "min_size": 4,
+        "max_size": 6,
         "kills": [0, 1, 2, 3],
         "weight": 1
     },
@@ -208,6 +193,8 @@
         "text": "{t1} sets an explosive off, killing {t2}, {t3}, {t4} and {t5}.",
         "tags": ["death", "combat"],
         "tributes_needed": 5,
+        "min_size": 5,
+        "max_size": 6,
         "requires_item": "Explosive",
         "lose_items": ["Explosive"],
         "kills": [1, 2, 3, 4],
@@ -218,6 +205,8 @@
         "text": "{t1} accidentally steps on a landmine.",
         "tags": ["death"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "kills": [0],
         "weight": 5
     },
@@ -226,6 +215,8 @@
         "text": "{t1} kills {t2} with a sickle.",
         "tags": ["death", "combat"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "requires_item": "Sickle",
         "kills": [1],
         "weight": 8
@@ -235,6 +226,8 @@
         "text": "{t1} stabs {t2} in the back with a trident.",
         "tags": ["death", "combat"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "requires_item": "Trident",
         "kills": [1],
         "weight": 8
@@ -244,6 +237,8 @@
         "text": "{t1} bashes {t2}'s head in with a mace.",
         "tags": ["death", "combat"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "requires_item": "Mace",
         "kills": [1],
         "weight": 8
@@ -253,6 +248,8 @@
         "text": "{t1} sets {t2} on fire with a molotov.",
         "tags": ["death", "combat"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "requires_item": "Molotov",
         "lose_items": ["Molotov"],
         "kills": [1],
@@ -263,6 +260,8 @@
         "text": "{t1} repeatedly stabs {t2} to death with sais.",
         "tags": ["death", "combat"],
         "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
         "requires_item": "Sais",
         "kills": [1],
         "weight": 8
@@ -272,6 +271,8 @@
         "text": "{t1} unknowingly eats toxic berries.",
         "tags": ["death", "forest"],
         "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
         "kills": [0],
         "weight": 5
     },
@@ -280,6 +281,8 @@
         "text": "{t1}, {t2}, and {t3} successfully ambush and kill {t4}, {t5}, and {t6}.",
         "tags": ["death", "combat"],
         "tributes_needed": 6,
+        "min_size": 6,
+        "max_size": 6,
         "kills": [3, 4, 5],
         "weight": 1
     },
@@ -288,6 +291,8 @@
         "text": "{t1}, {t2}, and {t3} unsuccessfully ambush {t4}, {t5}, and {t6}, who kill them instead.",
         "tags": ["death", "combat"],
         "tributes_needed": 6,
+        "min_size": 6,
+        "max_size": 6,
         "kills": [0, 1, 2],
         "weight": 1
     }

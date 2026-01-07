@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Optional, Union, Any, TYPE_CHECKING
-from .models import Alliance, Terrain, Item, format_tribute_list
+from .models import Alliance, Terrain, Item, Tribute, format_tribute_list
 from .combat import CombatResolver
 
 # Prevent circular import during runtime
@@ -59,13 +59,23 @@ class SimpleEvent(GameEvent):
     """
     Data-driven events loaded from JSON.
     Supports: Stats, Health, Status, Item Gain/Loss, and Item Requirements.
+    Now supports decoupling 'tributes_needed' (for text) from group size.
     """
     def __init__(self, data: dict[str,Any]) -> None:
+        # The number of people used in the text/logic (e.g. {t1}, {t2})
+        self.tributes_needed = data.get('tributes_needed', 1)
+        
+        # Group size constraints
+        # Default min/max match tributes_needed for backward compatibility (strict matching)
+        # JSON can override these to allow 1-person events in 5-person groups.
+        min_s = data.get('min_size', self.tributes_needed)
+        max_s = data.get('max_size', self.tributes_needed)
+
         super().__init__(
             name=data.get('id', 'simple_event'),
             tags=data.get('tags', []),
-            min_size=data.get('tributes_needed', 1),
-            max_size=data.get('tributes_needed', 1),
+            min_size=min_s,
+            max_size=max_s,
             weight=data.get('weight', 10)
         )
         self.text_template: str = data['text']
@@ -82,44 +92,67 @@ class SimpleEvent(GameEvent):
         self.lose_items: list[str] = data.get('lose_items', [])             # Names of items to remove
 
     def check_conditions(self, alliance: Alliance, terrain: Terrain) -> bool:
-        # 1. Standard checks (size, terrain)
+        # 1. Standard checks (size vs min_size/max_size, terrain)
         if not super().check_conditions(alliance, terrain):
             return False
             
         # 2. Item Requirement Check
         if self.requires_item:
-            has_item = False
+            # Check shared inventory
+            in_shared = any(i.name == self.requires_item for i in alliance.shared_inventory)
+            if in_shared:
+                return True
+                
+            # Check personal inventories
             for member in alliance.members:
                 if any(i.name == self.requires_item for i in member.inventory):
-                    has_item = True
-                    break
-            if not has_item:
-                return False
+                    return True
+            
+            return False
                 
         return True
 
     def execute(self, alliance, terrain, game_engine_ref=None):
-        # 1. Filter Valid Actors
-        # If an item is required, we restrict the 'pool' of actors to those who have it.
-        if self.requires_item:
-            valid_actors = [
-                m for m in alliance.members 
-                if any(i.name == self.requires_item for i in m.inventory)
-            ]
-            # Fallback (Shouldn't happen due to check_conditions, but safety first)
-            if not valid_actors: valid_actors = alliance.members
-        else:
-            valid_actors = alliance.members
-
-        # Copy and shuffle so {t1} is random among valid candidates
-        actors = list(valid_actors)
-        random.shuffle(actors)
+        # --- 1. SELECT ACTIVE ACTORS ---
+        all_members = list(alliance.members)
+        random.shuffle(all_members)
         
-        # 2. Apply Effects (Stats / Health / Status)
+        active_actors = []
+
+        # Special Case: If Item Required, {t1} should ideally be the one using it
+        if self.requires_item:
+            # Check if it's in shared inventory
+            in_shared = any(i.name == self.requires_item for i in alliance.shared_inventory)
+            
+            if in_shared:
+                # Anyone can use it
+                active_actors.append(all_members.pop(0))
+            else:
+                # Must find someone who has it personally
+                candidate_t1 = next((m for m in all_members if any(i.name == self.requires_item for i in m.inventory)), None)
+                if candidate_t1:
+                    active_actors.append(candidate_t1)
+                    all_members.remove(candidate_t1)
+                else:
+                    # Fallback (shouldn't happen due to check_conditions)
+                    active_actors.append(all_members.pop(0))
+        else:
+            active_actors.append(all_members.pop(0))
+
+        # Fill remaining roles
+        needed_rem = self.tributes_needed - 1
+        if needed_rem > 0:
+            count = min(len(all_members), needed_rem)
+            active_actors.extend(all_members[:count])
+
+        # IMPORTANT: All subsequent logic (Effects, Kills, Text) applies ONLY to active_actors
+        actors = active_actors
+        
+        # --- 2. APPLY EFFECTS ---
         for stat, value in self.effects.items():
             for actor in actors:
                 if stat == 'health':
-                    if value < 0: actor.change_health(-value)
+                    if value < 0: actor.change_health(-abs(value))
                     else: actor.health = min(actor.max_health, actor.health + value)
                         
                 elif stat in ['strength', 'intel', 'speed', 'defense', 'aggression', 'stealth']:
@@ -128,21 +161,29 @@ class SimpleEvent(GameEvent):
                         actor.stats[stat] = min(max(1, current + value), 10)
 
                 elif stat in ['poisoned', 'injured']:
-                    
                     is_active = (value > 0)
                     if hasattr(actor, stat):
                         setattr(actor, stat, is_active)
 
-        # 3. Item Loss
+        # --- 3. ITEM LOSS ---
         for item_name in self.lose_items:
-            for actor in actors:
-                # Find the item in inventory
-                match = next((i for i in actor.inventory if i.name == item_name), None)
+            # Try personal inventory of the main actor first
+            target = actors[0] if actors else None
+            found = False
+            
+            if target:
+                match = next((i for i in target.inventory if i.name == item_name), None)
                 if match:
-                    actor.inventory.remove(match)
-                    break 
+                    target.inventory.remove(match)
+                    found = True
+            
+            # If not found personally, check shared inventory
+            if not found:
+                match_shared = next((i for i in alliance.shared_inventory if i.name == item_name), None)
+                if match_shared:
+                    alliance.shared_inventory.remove(match_shared)
 
-        # 4. Item Gain
+        # --- 4. ITEM GAIN ---
         if self.gain_items and game_engine_ref:
             # We access items via the terrain object in the engine
             from .models import Item
@@ -150,33 +191,31 @@ class SimpleEvent(GameEvent):
             for item_name in self.gain_items:
                 new_item = None
                 
-                # A. Check Infinite List (Factory Mode)
-                # Does the terrain know about this item as an infinite resource?
+                # Check Infinite/Finite Pools
                 infinite_match = next((i for i in game_engine_ref.terrain.infinite_items if i.name == item_name), None)
-                
                 if infinite_match:
                      new_item = Item(infinite_match.name, infinite_match.kind, infinite_match.bonuses)
-                
-                # B. Check Finite List (Deck Mode)
-                # Does it exist in the arena physically?
                 else:
                     finite_idx = -1
                     for idx, i in enumerate(game_engine_ref.terrain.finite_items):
                         if i.name == item_name:
                             finite_idx = idx
                             break
-                    
                     if finite_idx != -1:
-                        # Pop it from the arena!
                         new_item = game_engine_ref.terrain.finite_items.pop(finite_idx)
                     else:
-                        # We try to create a generic one.
                         new_item = Item(item_name, "misc")
 
-                if new_item and actors:
-                    actors[0].inventory.append(new_item)
-
-        # 5. Process Deaths
+                if new_item:
+                    # Logic: If solo, keep it. If group, chance to share.
+                    selfish_chance = min(0, (0.03 * actors[0].stats.get('stealth',5)) - 0.05)
+                    if len(alliance.members) == 1 or random.random() < selfish_chance:
+                        if actors: actors[0].inventory.append(new_item)
+                    else:
+                        # Shared inventory
+                        alliance.shared_inventory.append(new_item)
+                        
+        # --- 5. PROCESS DEATHS ---
         dead_names = []
         for index in self.kills:
             if index < len(actors):
@@ -184,7 +223,7 @@ class SimpleEvent(GameEvent):
                 victim.change_health(-999) 
                 dead_names.append(victim.name)
 
-        # 6. Format Text
+        # --- 6. FORMAT TEXT ---
         text = self.text_template
         for i, actor in enumerate(actors):
             idx = i + 1 
@@ -197,7 +236,6 @@ class SimpleEvent(GameEvent):
                 text = text.replace(f"{{he{idx}}}", actor.he_she)
                 text = text.replace(f"{{him{idx}}}", actor.him_her)
                 text = text.replace(f"{{his{idx}}}", actor.his_her)
-
                 # Checks for {He1}, {Him1}, {His1}
                 text = text.replace(f"{{He{idx}}}", actor.he_she.capitalize())
                 text = text.replace(f"{{Him{idx}}}", actor.him_her.capitalize())
@@ -239,7 +277,8 @@ class ScavengeEvent(GameEvent):
             return f"{tribute.name} searches frantically but the arena has been picked clean."
 
         if found_item:
-            tribute.inventory.append(found_item)
+            if len(alliance.members) == 1: tribute.inventory.append(found_item)
+            else : alliance.shared_inventory.append(found_item)
             
             if found_item.name in tribute.proficient_items:
                 return f"{tribute.name} uncovers a {found_item.name}. They smile wickedly."
@@ -259,11 +298,7 @@ class AmicableDisbandEvent(GameEvent):
         # ITEM DISTRIBUTION LOGIC
         all_items = []
         
-        # 1. Pool all items (Personal + Shared)
-        for member in alliance.members:
-            all_items.extend(member.inventory)
-            member.inventory = []  # Clear temporarily
-            
+        # 1. Pool all items (Personal)
         if hasattr(alliance, 'shared_inventory'):
             all_items.extend(alliance.shared_inventory)
             alliance.shared_inventory = []
@@ -345,8 +380,7 @@ class FormAllianceEvent(GameEvent):
         # 3. Pick a friend
         friend_alliance = random.choice(potential_friends)
 
-        # 4. Create the Merged Alliance
-        # Combine lists but ensure no specific tribute object appears twice
+        # Logic: Deduplicate members, merge inventories
         seen_ids = set()
         new_members = []
         
@@ -357,7 +391,13 @@ class FormAllianceEvent(GameEvent):
         
         new_alliance = Alliance(new_members)
         
-        # 5. Update Engine
+        # 5. MERGE SHARED INVENTORIES
+        if hasattr(alliance, 'shared_inventory'):
+            new_alliance.shared_inventory.extend(alliance.shared_inventory)
+        if hasattr(friend_alliance, 'shared_inventory'):
+            new_alliance.shared_inventory.extend(friend_alliance.shared_inventory)
+        
+        # 6. Update Engine
         game_engine_ref.pending_new_alliances.append(new_alliance)
         
         # 6. Clear old alliances so they become inactive (and don't act again this turn)
@@ -410,11 +450,9 @@ class CombatEvent(GameEvent):
         # Pick a random enemy group
         enemy_alliance = random.choice(potential_targets)
 
-        # 2. Resolve Fight
-        # Current 'alliance' is the Attacker (initator)
         result_text = self.resolver.resolve_fight(
-            attackers=alliance.members, 
-            defenders=enemy_alliance.members, 
+            attacker_alliance=alliance, 
+            defender_alliance=enemy_alliance, 
             terrain=terrain
         )
 

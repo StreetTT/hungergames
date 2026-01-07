@@ -180,6 +180,7 @@ class Alliance:
     def __init__(self, members: list[Tribute]) -> None:
         self.members = members
         self.shared_inventory: list["Item"] = [] 
+        self.merge_inventory()
 
     @property
     def is_active(self) -> bool:
@@ -202,6 +203,13 @@ class Alliance:
         return {
             "members": [t.name for t in self.members]
         }
+    
+    def merge_inventory(self) -> None:
+        for t in self.members:
+            if not t.inventory: continue
+            self.shared_inventory.extend(t.inventory)
+            t.inventory = []
+
 
 
 class Terrain:
