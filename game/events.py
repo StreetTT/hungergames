@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Optional, Union, Any, TYPE_CHECKING
-from .models import Alliance, Terrain, Item, Tribute, format_tribute_list
+from .models import Alliance, Terrain, Item, format_tribute_list
 from .combat import CombatResolver
 
 # Prevent circular import during runtime
@@ -41,9 +41,10 @@ class GameEvent(ABC):
             
         return True
 
-    def get_adjusted_weight(self, terrain: Terrain) -> float:
+    def get_adjusted_weight(self, terrain: Terrain, day: int = 1) -> float:
         """
         Calculates probability based on Terrain settings.
+        Accepts 'day' for time-based scaling logic.
         """
         return self.base_weight * terrain.get_multiplier(self.tags)
 
@@ -119,7 +120,7 @@ class SimpleEvent(GameEvent):
         
         active_actors = []
 
-        # Special Case: If Item Required, {t1} should ideally be the one using it
+        # Special Case: If Item Required, {t1} MUST be someone who has the item.
         if self.requires_item:
             # Check if it's in shared inventory
             in_shared = any(i.name == self.requires_item for i in alliance.shared_inventory)
@@ -132,16 +133,18 @@ class SimpleEvent(GameEvent):
                 candidate_t1 = next((m for m in all_members if any(i.name == self.requires_item for i in m.inventory)), None)
                 if candidate_t1:
                     active_actors.append(candidate_t1)
-                    all_members.remove(candidate_t1)
+                    all_members.remove(candidate_t1) # Remove so they aren't picked as t2
                 else:
                     # Fallback (shouldn't happen due to check_conditions)
                     active_actors.append(all_members.pop(0))
         else:
+            # No item req, just pick random first person
             active_actors.append(all_members.pop(0))
 
         # Fill remaining roles
         needed_rem = self.tributes_needed - 1
         if needed_rem > 0:
+            # We use min() to ensure we don't crash if group size < needed (shouldn't happen due to logic)
             count = min(len(all_members), needed_rem)
             active_actors.extend(all_members[:count])
 
@@ -202,11 +205,13 @@ class SimpleEvent(GameEvent):
                             finite_idx = idx
                             break
                     if finite_idx != -1:
+                        # Pop it from the arena!
                         new_item = game_engine_ref.terrain.finite_items.pop(finite_idx)
                     else:
+                        # C. Generic Generation
                         new_item = Item(item_name, "misc")
 
-                if new_item:
+                if new_item and actors:
                     # Logic: If solo, keep it. If group, chance to share.
                     selfish_chance = min(0, (0.03 * actors[0].stats.get('stealth',5)) - 0.05)
                     if len(alliance.members) == 1 or random.random() < selfish_chance:
@@ -214,7 +219,7 @@ class SimpleEvent(GameEvent):
                     else:
                         # Shared inventory
                         alliance.shared_inventory.append(new_item)
-                        
+
         # --- 5. PROCESS DEATHS ---
         dead_names = []
         for index in self.kills:
@@ -422,6 +427,14 @@ class CombatEvent(GameEvent):
         super().__init__("Ambush", tags=["combat"], min_size=1, max_size=10, weight=5)
         self.resolver = CombatResolver()
 
+    def get_adjusted_weight(self, terrain: Terrain, day: int = 1) -> float:
+        """
+        Increases likelihood of combat by 10% per day to ensure the game resolves.
+        """
+        base_w = super().get_adjusted_weight(terrain, day)
+        time_multiplier = 1.0 + (day * 0.5)
+        return base_w * time_multiplier
+
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref:
             return "The wind howls."
@@ -487,7 +500,7 @@ class EventManager:
         for e_data in data:
             self.events.append(SimpleEvent(e_data))
 
-    def select_event(self, alliance: Alliance, terrain: Terrain) -> Optional[GameEvent]:
+    def select_event(self, alliance: Alliance, terrain: Terrain, day: int = 1) -> Optional[GameEvent]:
         """
         Weighted Random Selection based on Terrain and Group Size.
         """
@@ -496,7 +509,7 @@ class EventManager:
         
         for event in self.events:
             if event.check_conditions(alliance, terrain):
-                w = event.get_adjusted_weight(terrain)
+                w = event.get_adjusted_weight(terrain, day)
                 if w > 0:
                     valid_events.append(event)
                     weights.append(w)

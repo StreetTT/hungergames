@@ -155,10 +155,14 @@ class GameEngine:
 
         # 2. Check existence
         for item_name in needed_items:
-            if any(i.name == item_name for i in self.terrain.infinite_items): continue
-            if any(i.name == item_name for i in self.terrain.finite_items): continue
-
+            # Check Infinite
+            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.infinite_items):
+                continue
             
+            # Check Finite
+            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.finite_items):
+                continue
+
             # Inject
             if item_name in lookup:
                 print(f"[GameMaker] Injecting 1x {item_name} for proficiency balance.")
@@ -231,7 +235,8 @@ class GameEngine:
             leader_image = snapshot_members[0].image_url if snapshot_members else None
 
             # --- THE CORE EVENT TRIGGER ---
-            event = self.event_manager.select_event(alliance, self.terrain)
+            # Pass self.day to progressively increase combat weights
+            event = self.event_manager.select_event(alliance, self.terrain, self.day)
             
             if event:
                 # Execution might clear alliance.members (e.g. FormAlliance)
