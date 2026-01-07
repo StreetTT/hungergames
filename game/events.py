@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Optional, Union, Any, TYPE_CHECKING
-from .models import Alliance, Terrain, format_tribute_list
+from .models import Alliance, Terrain, Item, format_tribute_list
 from .combat import CombatResolver
 
 # Prevent circular import during runtime
@@ -144,22 +144,37 @@ class SimpleEvent(GameEvent):
 
         # 4. Item Gain
         if self.gain_items and game_engine_ref:
+            # We access items via the terrain object in the engine
             from .models import Item
             
             for item_name in self.gain_items:
-                # Find a prototype in the item pool
-                prototype = next((i for i in game_engine_ref.item_pool if i.name == item_name), None)
+                new_item = None
                 
-                if prototype:
-                    # Create a deep copy (or new instance) so we don't modify the pool
-                    new_item = Item(prototype.name, prototype.kind, prototype.bonuses)
-                    
-                    # Give to the main actor {t1}
-                    if actors:
-                        actors[0].inventory.append(new_item)
+                # A. Check Infinite List (Factory Mode)
+                # Does the terrain know about this item as an infinite resource?
+                infinite_match = next((i for i in game_engine_ref.terrain.infinite_items if i.name == item_name), None)
+                
+                if infinite_match:
+                     new_item = Item(infinite_match.name, infinite_match.kind, infinite_match.bonuses)
+                
+                # B. Check Finite List (Deck Mode)
+                # Does it exist in the arena physically?
                 else:
-                    # Fallback if item name is wrong in JSON
-                    print(f"Warning: Event tried to give unknown item '{item_name}'")
+                    finite_idx = -1
+                    for idx, i in enumerate(game_engine_ref.terrain.finite_items):
+                        if i.name == item_name:
+                            finite_idx = idx
+                            break
+                    
+                    if finite_idx != -1:
+                        # Pop it from the arena!
+                        new_item = game_engine_ref.terrain.finite_items.pop(finite_idx)
+                    else:
+                        # We try to create a generic one.
+                        new_item = Item(item_name, "misc")
+
+                if new_item and actors:
+                    actors[0].inventory.append(new_item)
 
         # 5. Process Deaths
         dead_names = []
@@ -193,28 +208,45 @@ class SimpleEvent(GameEvent):
 
 class ScavengeEvent(GameEvent):
     """
-    Complex Event: Searching for items.
+    Complex Event: Searching for items (Finite vs Infinite).
     """
     def __init__(self):
         super().__init__("Scavenge", tags=["scavenge"], min_size=1, max_size=1)
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         tribute = alliance.members[0]
-        
         # TODO: High intelligence finds better loot?
-        # Pure random from the engine's item pool
-        if not game_engine_ref or not game_engine_ref.item_pool:
-            return f"{tribute.name} searches for food but finds nothing."
-
-        found_item = random.choice(game_engine_ref.item_pool)
-        tribute.inventory.append(found_item)
         
-        # Check Proficiency
-        if found_item.name in tribute.proficient_items:
-            return f"{tribute.name} finds a {found_item.name}. {tribute.he_she.capitalize()} looks deadly with it!"
-            
-        return f"{tribute.name} finds a {found_item.name}."
+        # We need the terrain to access items
+        if not terrain:
+            return f"{tribute.name} looks for supplies but finds nothing."
 
+        found_item = None
+        
+        # 1. Try to find a Rare/Finite Item (20% Chance if any exist)
+        if terrain.finite_items and random.random() < 0.20:
+            # Randomly pick an index so we can POP it (remove from game)
+            idx = random.randrange(len(terrain.finite_items))
+            found_item = terrain.finite_items.pop(idx)
+            
+        # 2. Fallback to Common/Infinite Items
+        elif terrain.infinite_items:
+            # Create a COPY (Factory Mode)
+            prototype = random.choice(terrain.infinite_items)
+            found_item = Item(prototype.name, prototype.kind, prototype.bonuses)
+            
+        else:
+            return f"{tribute.name} searches frantically but the arena has been picked clean."
+
+        if found_item:
+            tribute.inventory.append(found_item)
+            
+            if found_item.name in tribute.proficient_items:
+                return f"{tribute.name} uncovers a {found_item.name}. They smile wickedly."
+                
+            return f"{tribute.name} scavenges and finds a {found_item.name}."
+            
+        return f"{tribute.name} finds nothing of use."
 
 class AmicableDisbandEvent(GameEvent):
     """

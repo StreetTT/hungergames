@@ -205,12 +205,20 @@ class Alliance:
 
 
 class Terrain:
-    """Global Modifier for Event Probabilities."""
-    def __init__(self, name, tag_multipliers: Optional[dict[str,float]]=None) -> None:
+    """Global Modifier and Item Container."""
+    def __init__(self, 
+                 name: str, 
+                 tag_multipliers: Optional[dict[str,float]]=None,
+                 finite_items: list[Item]=[],
+                 infinite_items: list[Item]=[]) -> None:
         self.name = name
         
         # Example: {"water": 2.0, "desert": 0.0}
         self.tag_multipliers = tag_multipliers if tag_multipliers else {}
+        
+        # Can be list of Item objects OR list of strings (names)
+        self.finite_items = finite_items if finite_items is not None else []
+        self.infinite_items = infinite_items if infinite_items is not None else []
 
     def get_multiplier(self, tags) -> float:
         """
@@ -225,9 +233,28 @@ class Terrain:
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "tag_multipliers": self.tag_multipliers
+            "tag_multipliers": self.tag_multipliers,
+            # If it's a string, keep it as string. If it's Item, dict it.
+            "finite_items": [i.to_dict() for i in self.finite_items],
+            "infinite_items": [i.to_dict() for i in self.infinite_items]
         }
     
     @staticmethod
     def from_dict(data) -> "Terrain":
-        return Terrain(data['name'], data.get('tag_multipliers'))
+        # Handle mixed content: Dicts (serialized Items) or Strings
+        def parse_list(raw_list):
+            parsed = []
+            for x in raw_list:
+                if isinstance(x, dict):
+                    parsed.append(Item.from_dict(x))
+                else:
+                    # It's a string (or other primitive), keep it as is for the Engine to resolve
+                    parsed.append(x)
+            return parsed
+
+        return Terrain(
+            name=data['name'], 
+            tag_multipliers=data.get('tag_multipliers'),
+            finite_items=parse_list(data.get('finite_items', [])),
+            infinite_items=parse_list(data.get('infinite_items', []))
+        )

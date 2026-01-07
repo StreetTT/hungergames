@@ -74,5 +74,221 @@
             "health": 50
         },
         "weight": 50
+    },
+    {
+        "id": "injure_self",
+        "text": "{t1} injures {him1}self.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "effects": {"health": -10, "injured": 1},
+        "weight": 5
+    },
+    {
+        "id": "craft_spear",
+        "text": "{t1} makes a wooden spear.",
+        "tags": ["forest", "crafting"],
+        "tributes_needed": 1,
+        "gain_items": ["Wooden Spear"],
+        "weight": 5
+    },
+    {
+        "id": "collect_fruit",
+        "text": "{t1} collects fruit from a tree.",
+        "tags": ["forest"],
+        "tributes_needed": 1,
+        "gain_items": ["Fruit"],
+        "weight": 10
+    },
+    {
+        "id": "sponsor_hatchet",
+        "text": "{t1} receives a hatchet from an unknown sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "gain_items": ["Hatchet"],
+        "weight": 5
+    },
+    {
+        "id": "sponsor_water",
+        "text": "{t1} receives clean water from an unknown sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "gain_items": ["Clean Water"],
+        "effects": {"health": 5},
+        "weight": 5
+    },
+    {
+        "id": "sponsor_medical",
+        "text": "{t1} receives medical supplies from an unknown sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "gain_items": ["Medical Supplies"],
+        "effects": {"health": 10},
+        "weight": 5
+    },
+    {
+        "id": "craft_slingshot",
+        "text": "{t1} makes a slingshot.",
+        "tags": ["crafting"],
+        "tributes_needed": 1,
+        "gain_items": ["Slingshot"],
+        "weight": 5
+    },
+    {
+        "id": "sponsor_explosive",
+        "text": "{t1} receives an explosive from an unknown sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "gain_items": ["Explosive"],
+        "weight": 2
+    },
+    {
+        "id": "sanity_check",
+        "text": "{t1} questions {his1} sanity.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "effects": {"intel": -1},
+        "weight": 5
+    },
+    {
+        "id": "night_fire",
+        "text": "{t1} starts a fire.",
+        "tags": ["night"],
+        "tributes_needed": 1,
+        "weight": 10
+    },
+    {
+        "id": "night_cuddle",
+        "text": "{t1} convinces {t2} to snuggle with {him1}.",
+        "tags": ["night", "social"],
+        "tributes_needed": 2,
+        "effects": {"health": 5},
+        "weight": 5
+    },
+    {
+        "id": "night_stories_4",
+        "text": "{t1}, {t2}, {t3}, and {t4} tell each other ghost stories to lighten the mood.",
+        "tags": ["night", "social"],
+        "tributes_needed": 4,
+        "weight": 5
+    },
+    {
+        "id": "kill_off_guard",
+        "text": "{t1} catches {t2} off guard and kills {him2}.",
+        "tags": ["death"],
+        "tributes_needed": 2,
+        "kills": [1],
+        "weight": 10
+    },
+    {
+        "id": "suicide_pact_reluctant",
+        "text": "{t1} begs for {t2} to kill {him1}. {t2} reluctantly obliges, killing {t1}.",
+        "tags": ["death", "social"],
+        "tributes_needed": 2,
+        "kills": [0],
+        "weight": 2
+    },
+    {
+        "id": "kill_drown_group",
+        "text": "{t1} and {t2} work together to drown {t3}.",
+        "tags": ["death", "water"],
+        "tributes_needed": 3,
+        "kills": [2],
+        "weight": 5
+    },
+    {
+        "id": "suicide_pact_4",
+        "text": "{t1}, {t2}, {t3}, and {t4} form a suicide pact, killing themselves.",
+        "tags": ["death"],
+        "tributes_needed": 4,
+        "kills": [0, 1, 2, 3],
+        "weight": 1
+    },
+    {
+        "id": "kill_explosive_5",
+        "text": "{t1} sets an explosive off, killing {t2}, {t3}, {t4} and {t5}.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 5,
+        "requires_item": "Explosive",
+        "lose_items": ["Explosive"],
+        "kills": [1, 2, 3, 4],
+        "weight": 1
+    },
+    {
+        "id": "death_mine_accident",
+        "text": "{t1} accidentally steps on a landmine.",
+        "tags": ["death"],
+        "tributes_needed": 1,
+        "kills": [0],
+        "weight": 5
+    },
+    {
+        "id": "kill_sickle",
+        "text": "{t1} kills {t2} with a sickle.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "requires_item": "Sickle",
+        "kills": [1],
+        "weight": 8
+    },
+    {
+        "id": "kill_trident_back",
+        "text": "{t1} stabs {t2} in the back with a trident.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "requires_item": "Trident",
+        "kills": [1],
+        "weight": 8
+    },
+    {
+        "id": "kill_mace",
+        "text": "{t1} bashes {t2}'s head in with a mace.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "requires_item": "Mace",
+        "kills": [1],
+        "weight": 8
+    },
+    {
+        "id": "kill_molotov",
+        "text": "{t1} sets {t2} on fire with a molotov.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "requires_item": "Molotov",
+        "lose_items": ["Molotov"],
+        "kills": [1],
+        "weight": 8
+    },
+    {
+        "id": "kill_sais",
+        "text": "{t1} repeatedly stabs {t2} to death with sais.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "requires_item": "Sais",
+        "kills": [1],
+        "weight": 8
+    },
+    {
+        "id": "death_poison_berries",
+        "text": "{t1} unknowingly eats toxic berries.",
+        "tags": ["death", "forest"],
+        "tributes_needed": 1,
+        "kills": [0],
+        "weight": 5
+    },
+    {
+        "id": "hunt_group_6",
+        "text": "{t1}, {t2}, and {t3} successfully ambush and kill {t4}, {t5}, and {t6}.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 6,
+        "kills": [3, 4, 5],
+        "weight": 1
+    },
+    {
+        "id": "fail_ambush_6",
+        "text": "{t1}, {t2}, and {t3} unsuccessfully ambush {t4}, {t5}, and {t6}, who kill them instead.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 6,
+        "kills": [0, 1, 2],
+        "weight": 1
     }
 ]

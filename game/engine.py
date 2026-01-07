@@ -1,10 +1,51 @@
 import random
-from .models import Tribute, Alliance, Item, Terrain
+from .models import Tribute, Alliance, Item, Terrain, format_tribute_list
 from .events import EventManager
 from typing import Optional, Union, Any 
-from .models import format_tribute_list
 
 class GameEngine:
+    # --- MASTER ITEM LIBRARY ---
+    # Used to hydrate string references in Terrain or create defaults.
+    ITEM_LIBRARY = [
+        # -- Weapons (Melee) --
+        {"item": Item("Sword", "weapon", {"strength": 3}), "qty": 2},
+        {"item": Item("Mace", "weapon", {"strength": 5, "speed": -2}), "qty": 1},
+        {"item": Item("Sickle", "weapon", {"strength": 3, "speed": 1}), "qty": 1},
+        {"item": Item("Sais", "weapon", {"strength": 2, "speed": 3, "defense": 1}), "qty": 1},
+        {"item": Item("Hatchet", "weapon", {"strength": 3}), "qty": 2},
+        {"item": Item("Trident", "weapon", {"strength": 4, "speed": 1}), "qty": 1},
+        {"item": Item("Axe", "weapon", {"strength": 4, "speed": -1}), "qty": 1},
+        {"item": Item("Knife", "weapon", {"strength": 1, "speed": 3, "stealth": 1}), "qty": None}, 
+        
+        # -- Weapons (Ranged/Special) --
+        {"item": Item("Bow", "weapon", {"strength": 2, "speed": 2}), "qty": 1},
+        {"item": Item("Slingshot", "weapon", {"strength": 1, "speed": 2}), "qty": None},
+        {"item": Item("Blow Dart", "weapon", {"strength": 1, "stealth": 4}), "qty": 1},
+        {"item": Item("Explosive", "weapon", {"strength": 10, "aggression": 2}), "qty": 1},
+        {"item": Item("Land Mine", "weapon", {"strength": 10, "stealth": 5}), "qty": 1},
+        {"item": Item("Molotov", "weapon", {"strength": 6, "aggression": 3}), "qty": 2},
+        {"item": Item("Wooden Spear", "weapon", {"strength": 2, "speed": 1}), "qty": None},
+
+        # -- Survival / Food --
+        {"item": Item("Apple", "food", {"health": 5}), "qty": None},
+        {"item": Item("Fruit", "food", {"health": 5}), "qty": None},
+        {"item": Item("Bread", "food", {"health": 10}), "qty": None},
+        {"item": Item("Fresh Food", "food", {"health": 15}), "qty": 5},
+        {"item": Item("Water", "food", {"health": 5, "speed": 1}), "qty": None},
+        {"item": Item("Clean Water", "food", {"health": 10, "speed": 1}), "qty": 5},
+        
+        # -- Medical --
+        {"item": Item("Medkit", "medical", {"health": 20}), "qty": 5},
+        {"item": Item("Medical Supplies", "medical", {"health": 25, "injured": -1}), "qty": 3},
+        {"item": Item("Bandages", "medical", {"health": 10}), "qty": None},
+        
+        # -- Gear / Misc --
+        {"item": Item("Camo Paint", "misc", {"stealth": 3}), "qty": None},
+        {"item": Item("Night Vision", "misc", {"stealth": 1, "intel": 2}), "qty": 1},
+        {"item": Item("Rope", "misc", {"speed": 1}), "qty": None},
+        {"item": Item("Fishing Gear", "misc", {"intel": 1}), "qty": 1}
+    ]
+
     def __init__(self, roster_data: Union[list[dict[str, Any]],list[Tribute]], terrain_config: Union[dict[str, Any], Terrain], rng_seed: int) -> None:
         """
         roster_data: List of dicts (from serialized JSON)
@@ -20,42 +61,119 @@ class GameEngine:
         from .models import Tribute, Terrain # Local import to avoid circular dep
         
         self.tributes = []
-        for t_data in roster_data:
+        # Handle both raw dicts or existing Objects
+        raw_list = roster_data if isinstance(roster_data, list) else []
+        for t_data in raw_list:
             if isinstance(t_data, dict):
                 self.tributes.append(Tribute.from_dict(t_data))
             else:
                 self.tributes.append(t_data)
 
+        # 3. Initialize Terrain
         if isinstance(terrain_config, dict):
             self.terrain = Terrain.from_dict(terrain_config)
         else:
             self.terrain = terrain_config
 
-        # 3. Game State
+        # 4. Initialize Systems
+        self.event_manager = EventManager()
+
+        # 5. RESOLVE ITEMS
+        # This converts any strings in the terrain lists into actual Item objects
+        self._resolve_terrain_items()
+
+        # 6. Initialize Item Pool (If empty)
+        # If the terrain was totally empty (no strings, no items), we load defaults.
+        if not self.terrain.finite_items and not self.terrain.infinite_items:
+            self._init_default_pool()
+        
+        # 7. Inject Missing Proficiencies
+        self._inject_proficiencies()
+
+        # 8. Game State & Alliances
         self.day = 0
         self.game_log = {
             "meta": {"seed": self.seed, "winner": None},
             "timeline": []
         }
-        
-        # 4. Systems
-        self.event_manager = EventManager()
-        self.item_pool = self._init_item_pool()
-        
-        # 5. Alliance Management
-        # Everyone starts in a solo alliance
         self.alliances = [Alliance([t]) for t in self.tributes]
-        self.pending_new_alliances = [] # Queue for groups formed during turns
+        self.pending_new_alliances = [] 
 
-    def _init_item_pool(self) -> list[Item]:
-        """Creates the default loot table."""
-        return [
-            Item("Apple", "food", {"health": 5}),
-            Item("Sword", "weapon", {"strength": 2}),
-            Item("Medkit", "medical", {"health": 20}),
-            Item("Bow", "weapon", {"strength": 1, "speed": 1}),
-            Item("Camo Paint", "misc", {"stealth": 3})
-        ]
+    def _resolve_terrain_items(self) -> None:
+        """
+        Scans Terrain item lists. If it finds a string, it replaces it 
+        with a fresh Item object from the Master Library.
+        If the string isn't in the library, it creates a generic Item.
+        """
+        # Create a lookup map for fast access
+        lookup = {entry["item"].name: entry["item"] for entry in self.ITEM_LIBRARY}
+
+        def resolve_list(item_list):
+            resolved = []
+            for entry in item_list:
+                if isinstance(entry, Item):
+                    # Already an object, keep it
+                    resolved.append(entry)
+                elif isinstance(entry, str):
+                    # It's a name, look it up
+                    if entry in lookup:
+                        # Clone the prototype
+                        proto = lookup[entry]
+                        resolved.append(Item(proto.name, proto.kind, proto.bonuses))
+                    else:
+                        # Unknown item, create generic
+                        print(f"[Engine] Warning: Resolving unknown item '{entry}' as generic.")
+                        resolved.append(Item(entry, "misc"))
+            return resolved
+
+        self.terrain.finite_items = resolve_list(self.terrain.finite_items)
+        self.terrain.infinite_items = resolve_list(self.terrain.infinite_items)
+
+    def _init_default_pool(self) -> None:
+        """
+        Populates the Terrain with defaults from the Master Library if the terrain was empty.
+        """
+        for entry in self.ITEM_LIBRARY:
+            proto = entry["item"]
+            qty = entry["qty"]
+            
+            if qty is None:
+                self.terrain.infinite_items.append(Item(proto.name, proto.kind, proto.bonuses))
+            else:
+                for _ in range(qty):
+                    # Create distinct objects for finite items
+                    self.terrain.finite_items.append(Item(proto.name, proto.kind, proto.bonuses))
+
+    def _inject_proficiencies(self) -> None:
+        """
+        Ensures that if a tribute needs a specific item, it exists in the game.
+        """
+        lookup = {entry["item"].name: entry["item"] for entry in self.ITEM_LIBRARY}
+        
+        # 1. Identify all unique items needed by current tributes
+        needed_items = set()
+        for t in self.tributes:
+            for p_item in t.proficient_items:
+                needed_items.add(p_item)
+
+        # 2. Check existence
+        for item_name in needed_items:
+            # Check Infinite
+            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.infinite_items):
+                continue
+            
+            # Check Finite
+            if any(isinstance(i, Item) and((i.name == item_name)) for i in self.terrain.finite_items):
+                continue
+
+            # Inject
+            if item_name in lookup:
+                print(f"[GameMaker] Injecting 1x {item_name} for proficiency balance.")
+                proto = lookup[item_name]
+                self.terrain.finite_items.append(Item(proto.name, proto.kind, proto.bonuses))
+            else:
+                print(f"[GameMaker] Tribute proficient in '{item_name}' (Unknown). Creating generic version.")
+                self.terrain.finite_items.append(Item(item_name, "weapon", {"strength": 2}))
 
     def get_alive_tributes(self) -> list[Tribute]:
         return [t for t in self.tributes if t.alive]
