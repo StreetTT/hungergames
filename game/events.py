@@ -471,6 +471,53 @@ class CombatEvent(GameEvent):
 
         return result_text
 
+class ForceSplitEvent(GameEvent):
+    """
+    Special Event: Forces the final group to disband.
+    """
+    def __init__(self):
+        super().__init__("Force Split", ["gamemaker"], min_size=2, max_size=99)
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Error"
+        
+        # Distribute shared inventory
+        if hasattr(alliance, 'shared_inventory') and alliance.shared_inventory:
+            for item in alliance.shared_inventory:
+                random.choice(alliance.members).inventory.append(item)
+            alliance.shared_inventory = []
+
+        names = format_tribute_list(alliance.members)
+        
+        # Perform disband
+        new_solos = alliance.disband()
+        
+        # Update engine directly
+        game_engine_ref.alliances = new_solos
+        
+        return f"Only {names} remain. The Gamemakers announce that there can be only one victor, forcing the alliance to turn on each other!"
+
+class ExtinctionPreventionEvent(GameEvent):
+    """
+    Special Event: Revives a tribute if everyone died.
+    """
+    def __init__(self):
+        super().__init__("Extinction Prevention", ["gamemaker"], min_size=0, max_size=0)
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Error"
+        
+        # Find recently dead
+        recently_dead_objs = [t for t in game_engine_ref.tributes if not t.alive and t.name not in game_engine_ref._get_previously_dead()]
+        
+        if recently_dead_objs:
+            survivor = max(recently_dead_objs, key=lambda t: t.stats.get('defense', 0) + random.random())
+            survivor.alive = True
+            survivor.health = 1
+            return f"Against all odds, {survivor.name} clings to life, refusing to die!"
+        
+        return "Everyone is dead."
+
 class EventManager:
     """
     The Brain that picks events.

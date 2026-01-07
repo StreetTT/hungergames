@@ -1,6 +1,6 @@
 import random
 from .models import Tribute, Alliance, Item, Terrain, format_tribute_list
-from .events import EventManager
+from .events import EventManager, ForceSplitEvent, ExtinctionPreventionEvent
 from typing import Optional, Union, Any 
 
 class GameEngine:
@@ -261,38 +261,44 @@ class GameEngine:
         # 3. Process Alliance Changes
         self._update_alliances()
 
-        # If a tribute is alone, they should hold items in their personal inventory, not shared.
+        # Consolidate Solo Inventories
         for alliance in self.alliances:
             if len(alliance.members) == 1 and hasattr(alliance, 'shared_inventory') and alliance.shared_inventory:
                 member = alliance.members[0]
                 member.inventory.extend(alliance.shared_inventory)
                 alliance.shared_inventory = []
 
-        # --- SPECIAL RULE: Force Split if One Group Remains ---
+        # Force Split
         if len(self.alliances) == 1 and len(self.alliances[0].members) > 1:
-            last_alliance = self.alliances[0]
+            target_alliance = self.alliances[0]
+            member_names = [t.name for t in target_alliance.members]
             
-            # 1. Distribute any shared items randomly so they aren't lost
-            if hasattr(last_alliance, 'shared_inventory') and last_alliance.shared_inventory:
-                for item in last_alliance.shared_inventory:
-                    random.choice(last_alliance.members).inventory.append(item)
-                last_alliance.shared_inventory = []
-
-            # 2. Capture names for logging
-            member_names = [t.name for t in last_alliance.members]
-            formatted_names = ", ".join(member_names)
-
-            # 3. Force Disband
-            # disband() returns a list of new single-person alliances
-            new_solos = last_alliance.disband()
-            self.alliances = new_solos
-
-            # 4. Log the Gamemaker Intervention
+            event = ForceSplitEvent()
+            text = event.execute(target_alliance, self.terrain, game_engine_ref=self)
+            
             day_log["events"].append({
-                "text": f"Only {formatted_names} remain. The Gamemakers announce that there can be only one victor, forcing the alliance to turn on each other!",
+                "text": text,
                 "type": "gamemaker",
                 "tributes_involved": member_names,
                 "image": None
+            })
+
+        # Extinction Check (Using new Event)
+        alive_now = self.get_alive_tributes()
+        if not alive_now:
+            event = ExtinctionPreventionEvent()
+            text = event.execute(Alliance([]), self.terrain, game_engine_ref=self)
+            
+            # Determine who was revived to log correctly
+            survivors = self.get_alive_tributes()
+            involved = [s.name for s in survivors]
+            img = survivors[0].image_url if survivors else None
+            
+            day_log["events"].append({
+                "text": text,
+                "type": "gamemaker",
+                "tributes_involved": involved,
+                "image": img
             })
 
         # 4. Tally Deaths
@@ -300,8 +306,7 @@ class GameEngine:
         dead_this_turn = [t.name for t in self.tributes if not t.alive and t.name not in self._get_previously_dead()]
         day_log["deaths_today"] = dead_this_turn
         
-        # 5. ALLIANCE SNAPSHOT
-        # Capture the state of every active group at end of day
+        # 5. Alliance Snapshot
         snapshot = []
         for alliance in self.alliances:
             if not alliance.is_active: continue
