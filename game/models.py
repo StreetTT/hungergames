@@ -31,6 +31,10 @@ class Item:
         if member.health < 40 and self.bonuses.get('health', 0) > 0: return True
         return False
 
+MIN_STAT = 1
+MAX_STAT = 15
+MIN_MULT = 0.0
+MAX_MULT = 5.0
 
 class Tribute:
     """The Player Character."""
@@ -57,12 +61,12 @@ class Tribute:
         # Defaulting to 5 if not provided
         if stats == None: stats = {}
         self.stats = {
-            "strength": stats.get('strength', 5),
-            "intel": stats.get('intel', 5),
-            "speed": stats.get('speed', 5),
-            "defense": stats.get('defense', 5),
-            "aggression": stats.get('aggression', 5),
-            "stealth": stats.get('stealth', 5)
+            "strength": self._clamp(stats.get('strength', 5)),
+            "intel": self._clamp(stats.get('intel', 5)),
+            "speed": self._clamp(stats.get('speed', 5)),
+            "defense": self._clamp(stats.get('defense', 5)),
+            "aggression": self._clamp(stats.get('aggression', 5)),
+            "stealth": self._clamp(stats.get('stealth', 5))
         }
 
         self.inventory: list[Item] = []
@@ -70,6 +74,15 @@ class Tribute:
         
         # The specific items they are good with (e.g. "Bow")
         self.proficient_items = proficient_items if proficient_items else []
+    
+    def _clamp(self, value: float) -> float:
+        return max(MIN_STAT, min(MAX_STAT, value))
+
+    def modify_stat(self, stat_name: str, amount: float) -> None:
+        """Safely modifies a stat within bounds."""
+        if stat_name in self.stats:
+            new_val = self.stats[stat_name] + amount
+            self.stats[stat_name] = self._clamp(new_val)
     
     @property
     def pronouns(self):
@@ -212,6 +225,12 @@ class Terrain:
         
         # Example: {"water": 2.0, "desert": 0.0}
         self.tag_multipliers = tag_multipliers if tag_multipliers else {}
+
+        self.tag_multipliers = {}
+        if tag_multipliers:
+            for tag, val in tag_multipliers.items():
+                # Prevent negative multipliers or crazy high values (e.g., 100x)
+                self.tag_multipliers[tag] = max(MIN_MULT, min(MAX_MULT, val))
         
         # Can be list of Item objects OR list of strings (names)
         self.finite_items = finite_items if finite_items is not None else []

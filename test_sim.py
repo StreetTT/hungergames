@@ -56,21 +56,20 @@ def run_test_sim():
     # ==========================================
     # 2. SETUP TERRAIN
     # ==========================================
-    finite_loot = [
-        # Custom Objects
-        Item("Golden Cornucopia Sword", "weapon", {"strength": 6, "aggression": 3}),
-        Item("Experimental Medkit", "medical", {"health": 50}),
-        # Strings (Will be resolved by Engine)
-        "Trident", "Bow", "Axe", "Spear", "Mace", "Sickle", 
-        "Boomerang", "Sais", "Night Vision", "Clean Water", 
-        "Explosive", "Land Mine" "Medical Supplies", "Medical Supplies", 
-        "Medical Supplies", "Medical Supplies", "Medical Supplies", "Medical Supplies"
-    ]
+    finite_loot = ["Fresh Food","Clean Water","Cooked Meat","Dried Venison",
+                   "Feast Roast","Medkit","Medical Supplies","Antidote","Splint",
+                   "Burn Ointment","Surgery Kit","Antibiotics","Canteen","Firearm Cleaning Kit",
+                   "Night Vision","Fishing Gear","Flashlight","Compass","Map","Binoculars","Ghillie Suit",
+                   "Thick Coat","Fire Starter","Empty Backpack","Sleeping Bag","Sword","Mace","Sickle","Sais",
+                   "Hatchet","Trident","Axe","Bow","Blow Dart","Explosive","Land Mine","Molotov","Katana",
+                   "Crossbow","Morning Star","Throwing Knives","Quarterstaff","Poison Dart",
+                    # Custom Objects
+                    Item("Golden Cornucopia Sword", "weapon", {"strength": 6, "aggression": 3}),
+                    Item("Experimental Medkit", "medical", {"health": 50})]
 
-    infinite_loot = [
-        "Rock", "Apple", "Camo Paint", "Bandages",
-        Item("Gas Mask", "misc", {"defense": 1})
-    ]
+    infinite_loot = ["Apple","Fruit","Bread","Water","Energy Bar","Raw Fish","Stale Bread","Bandages",
+                     "Herbal Poultice","Painkillers","Camouflage Netting","Camo Paint","Rope","Knife",
+                     "Slingshot","Wooden Spear", Item("Gas Mask", "misc", {"defense": 1})]
 
     terrain = Terrain(
         name="Mixed Input Arena",
@@ -89,8 +88,53 @@ def run_test_sim():
     print("Simulating...")
     result = engine.simulate()
 
-    # 4. PRINT RESULTS
+# 4. PRINT RESULTS
     print("\n--- 📜 GAME LOG ---")
+
+    # Define icons once (Expanded & Sorted)
+    icon_map = {
+        # --- CORE & STATUS ---
+        'combat':    "⚔️ ", 
+        'death':     "💀 ", 
+        'gamemaker': "📢 ", 
+        'idle':      "⏳ ",
+        'training':  "🎯 ",
+        
+        # --- ACTIONS ---
+        'scavenge':  "🎒 ", 
+        'crafting':  "🔨 ", 
+        'stealth':   "🥷 ",
+        'intel':     "🧠 ",
+        'trap':      "🪤 ",
+        'sabotage':  "🧨 ",
+        'camp':      "⛺ ",
+        
+        # --- INTERACTIONS ---
+        'social':    "💬 ", 
+        'trade':     "⚖️ ",
+        'romance':   "❤️ ",
+        'betrayal':  "🔪 ",
+        'conflict':  "😠 ",
+        'funny':     "😆 ",
+        'sad':       "😢 ",
+        
+        # --- HEALTH / MEDICAL ---
+        'medical':   "💊 ", 
+        'accident':  "🤕 ",
+        'mental':    "😵 ",
+        'sponsor':   "🎁 ",
+        
+        # --- ENVIRONMENT ---
+        'forest':    "🌲 ", 
+        'water':     "💧 ", 
+        'weather':   "⛈️ ",
+        'cold':      "❄️ ",
+        'fire':      "🔥 ",
+        'night':     "🌙 ",
+        'pve':       "🐺 ",
+        'dangerous': "⚠️ ",
+        'disaster':  "🌪️ "
+    }
     
     for day in result['timeline']:
         dayHeadding = day.get('day_name', f"DAY {day['day_number']}")
@@ -98,45 +142,7 @@ def run_test_sim():
         
         # A. EVENTS
         for event in day['events']:
-            # Extended Icon Map for new Event Types
-            icon_map = {
-                # Core
-                'combat': "⚔️ ", 
-                'death': "💀 ", 
-                'gamemaker': "📢 ", 
-                'idle': "⏳ ",
-                
-                # Actions
-                'scavenge': "🎒 ", 
-                'crafting': "🔨 ", 
-                'training': "🎯 ",
-                'stealth': "🥷 ",
-                'intel': "🧠 ",
-                
-                # Interactions
-                'social': "💬 ", 
-                'trade': "⚖️ ",
-                'romance': "❤️ ",
-                'betrayal': "🔪 ",
-                'conflict': "😠 ",
-                'funny': "😆 ",
-                'sad': "😢 ",
-                
-                # Health/Status
-                'medical': "💊 ", 
-                'accident': "🤕 ",
-                'mental': "😵‍💫 ",
-                'sponsor': "🎁 ",
-                
-                # Environment
-                'forest': "🌲 ", 
-                'water': "💧 ", 
-                'weather': "⛈️ ",
-                'pve': "🐺 ",
-                'dangerous': "⚠️ "
-            }
-            
-            # Default to "🌲" if the tag isn't found
+            # Default to "🌲 " if the tag isn't found
             icon = icon_map.get(event['type'], "🌲 ")
             
             # Print the event line

@@ -14,7 +14,7 @@ class GameEvent(ABC):
     def __init__(self, data: dict[str, Any]={}) -> None:
         self.name: str = data.get('id', 'simple_event')
         self.tags: list[str] = data.get('tags', [])  # List: ['water', 'forest', 'combat']
-        self.base_weight: float = data.get('weight', 10)
+        self.base_weight: float = data.get('weight', 5)
         self.text_template: str = data.get('text', '')
                 
         
@@ -104,7 +104,7 @@ class GameEvent(ABC):
                 if stat == 'health':
                     actor.change_health(val)
                 elif stat in actor.stats:
-                    actor.stats[stat] = max(1, min(10, actor.stats[stat] + val))
+                    actor.modify_stat(stat, val)
                 elif stat in ['poisoned', 'injured']:
                     setattr(actor, stat, (val > 0))
 
@@ -163,7 +163,7 @@ class GameEvent(ABC):
             if victim_alliance.members and victim_alliance.members[0].inventory:
                 item = victim_alliance.members[0].inventory.pop(0)
             # Try victim shared
-            elif hasattr(victim_alliance, 'shared_inventory') and victim_alliance.shared_inventory:
+            elif victim_alliance.shared_inventory:
                 item = victim_alliance.shared_inventory.pop(0)
             
             if item:
@@ -221,7 +221,7 @@ class CombatEvent(GameEvent):
         self.name = "Ambush"
         self.tags = ["combat"]
         self.max_size = 10
-        self.weight = 5
+        self.weight = 15
         self.resolver = CombatResolver()
 
     def get_adjusted_weight(self, terrain: Terrain, day: int = 1) -> float:        return super().get_adjusted_weight(terrain, day) * (1.0 + (day * 0.05))
@@ -275,7 +275,7 @@ class ThiefEvent(InterAllianceEvent):
         self.tags = ["scavenge", "stealth"] 
         self.min_size = 1
         self.max_size = 99
-        self.weight = 8
+        self.weight = 9
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
@@ -305,7 +305,7 @@ class RiskyTheftEvent(InterAllianceEvent, CombatEvent):
         self.tags = ["scavenge", "stealth", "combat"]
         self.min_size = 1
         self.max_size = 99
-        self.weight = 5
+        self.weight = 10
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
@@ -351,7 +351,7 @@ class SpyEvent(InterAllianceEvent, CombatEvent):
         self.tags = ["stealth", "intel"]
         self.min_size = 1
         self.max_size = 99
-        self.weight = 8
+        self.weight = 12
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
@@ -589,10 +589,6 @@ class BloodbathEvent(SpecialEvent, CombatEvent):
         tribute = alliance.members[0]
         aggro = sum(t.stats.get('aggression', 5) for t in alliance.members) / len(alliance.members)
         
-        # FLEE
-        if (random.random() * 20) + tribute.get_effective_stat('speed') > 15 and aggro < 6:
-            return f"{format_tribute_list(alliance.members)} runs away from the Cornucopia."
-            
         # FIGHT
         if (random.random() * 20) + aggro > 12 and game_engine_ref:
             targets = self.get_valid_targets(alliance, game_engine_ref)
@@ -602,8 +598,12 @@ class BloodbathEvent(SpecialEvent, CombatEvent):
                     random.choice(targets), 
                     terrain, 
                     game_engine_ref, 
-                    lethality_scale=50.0
+                    lethality_scale=5.0
                 )
+        
+        # FLEE
+        if (random.random() * 20) + tribute.get_effective_stat('speed') > 15 and aggro < 6:
+            return f"{format_tribute_list(alliance.members)} runs away from the Cornucopia."
         
         # SCAVENGE
         found = None
@@ -760,6 +760,250 @@ class TenseTradeEvent(InterAllianceEvent, CombatEvent):
 
         return f"{format_tribute_list(alliance.members)} meets {format_tribute_list(target.members)} to trade, but talks break down."
 
+class BetrayalEvent(ComplexEvent):
+    """
+    Complex Event: A member turns on their own alliance.
+    Trigger: High aggression, Group size > 1.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Betrayal"
+        self.tags = ["betrayal", "combat", "death"]
+        self.min_size = 2
+        self.max_size = 10
+        self.weight = 5
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        # 1. Identify a potential traitor (High Aggression)
+        traitor = None
+        for t in alliance.members:
+            if t.stats['aggression'] > 7 and random.random() < 0.3:
+                traitor = t
+                break
+        
+        if not traitor:
+            return f"{format_tribute_list(alliance.members)} argues heatedly but stays together."
+
+        # 2. Identify a victim (someone else)
+        potential_victims = [m for m in alliance.members if m != traitor]
+        victim = random.choice(potential_victims)
+
+        # 3. Resolve the stab
+        # If victim is sleeping or low defense, they die instantly
+        if victim.health < 30 or victim.get_effective_stat('defense') < traitor.get_effective_stat('strength'):
+            victim.change_health(-999)
+            
+            # Traitor steals their items
+            traitor.inventory.extend(victim.inventory)
+            victim.inventory = []
+            
+            # Traitor leaves the alliance
+            alliance.members.remove(traitor)
+            if game_engine_ref:
+                from .models import Alliance
+                game_engine_ref.pending_new_alliances.append(Alliance([traitor]))
+
+            return f"BETRAYAL! {traitor.name} stabs {victim.name} in the back and flees with their supplies!"
+        
+        else:
+            # Failed attempt
+            victim.change_health(-20)
+            return f"{traitor.name} tries to kill {victim.name} in their sleep, but {victim.name} wakes up in time to fight them off!"
+
+class SmartSponsorEvent(ComplexEvent):
+    """
+    Sponsors analyze the tribute's needs and send exactly what is required.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Smart Sponsor"
+        self.tags = ["sponsor"]
+        self.min_size = 1
+        self.max_size = 6
+        self.weight = 5
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        tribute = random.choice(alliance.members)
+        gift = None
+        message = ""
+
+        # Check Needs
+        if tribute.health < 40 or tribute.injured:
+            gift = game_engine_ref.create_item_from_name("Medkit")
+            message = "medicine to heal their wounds"
+        elif tribute.poisoned:
+            gift = game_engine_ref.create_item_from_name("Antidote") # Assuming you have this or generic
+            if not gift.name: gift = game_engine_ref.create_item_from_name("Medical Supplies")
+            message = "an antidote"
+        elif not any(i.kind == 'weapon' for i in tribute.inventory):
+             # Try to give them their proficient weapon
+             weapon_name = tribute.proficient_items[0] if tribute.proficient_items else "Knife"
+             gift = game_engine_ref.create_item_from_name(weapon_name)
+             message = f"a {gift.name}"
+        elif not any(i.kind == 'food' for i in tribute.inventory):
+             gift = game_engine_ref.create_item_from_name("Fresh Food")
+             message = "a hot meal"
+
+        if gift:
+            tribute.inventory.append(gift)
+            return f"Sponsors see {tribute.name} struggling and parachute in {message}."
+        
+        return f"{tribute.name} looks to the sky for help, but receives nothing."
+    
+class DefectionEvent(InterAllianceEvent):
+    """
+    Inter-Alliance: One group convinces a member of another group to switch sides.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Defection"
+        self.tags = ["social", "betrayal"]
+        self.weight = 4 
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        
+        # 1. Find a target group
+        targets = self.get_valid_targets(alliance, game_engine_ref)
+        if not targets: return f"{format_tribute_list(alliance.members)} tries to recruit allies but finds no one."
+        target_alliance = random.choice(targets)
+        
+        # 2. Pick the Persuader and the Potential Defector
+        persuader = max(alliance.members, key=lambda t: t.get_effective_stat('intel'))
+        defector = min(target_alliance.members, key=lambda t: t.get_effective_stat('aggression'))
+        
+        # 3. Skill Check: Intel vs Aggression/Loyalty
+        score_a = persuader.get_effective_stat('intel') + random.randint(1, 10)
+        score_b = defector.get_effective_stat('aggression') + 5 # Base loyalty bonus
+        
+        if score_a > score_b:
+            # SUCCESS: Switch Sides
+            target_alliance.members.remove(defector)
+            alliance.add_member(defector)
+            
+            return f"{persuader.name} convinces {defector.name} to abandon their allies and join {format_tribute_list(alliance.members)}!"
+            
+        return f"{persuader.name} tries to convince {defector.name} to defect, but is rebuffed."
+
+class WildfireEvent(ComplexEvent):
+    """
+    Complex Event: A fire forces a speed check. 
+    Fast characters are safe; slow characters take damage or are rescued.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Wildfire Escape"
+        self.tags = ["gamemaker", "disaster", "fire"]
+        self.weight = 5
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        # 1. Sort by Speed
+        sorted_members = sorted(alliance.members, key=lambda t: t.get_effective_stat('speed'), reverse=True)
+        
+        fastest = sorted_members[0]
+        slowest = sorted_members[-1]
+        
+        if len(alliance.members) == 1:
+            if fastest.get_effective_stat('speed') > 4:
+                return f"A wildfire erupts! {fastest.name} outruns the flames."
+            else:
+                fastest.change_health(-25)
+                return f"A wildfire erupts! {fastest.name} isn't fast enough and gets badly burned."
+
+        # Group Scenario
+        if slowest.get_effective_stat('speed') < 5:
+            # Slowest is in trouble.
+            # Brave/Good characters (Low aggression) might save.
+            if fastest.stats['aggression'] < 6:
+                fastest.change_health(-10) # Takes a hit to save friend
+                return f"A wildfire chases the group! {fastest.name} doubles back to carry {slowest.name} to safety, getting singed in the process."
+            else:
+                slowest.change_health(-40) # Left behind
+                if not slowest.alive:
+                    return f"A wildfire chases the group! {fastest.name} leaves {slowest.name} behind to be consumed by the flames."
+                return f"A wildfire chases the group! {slowest.name} barely survives the flames while the others run ahead."
+        
+        return f"A wildfire erupts, but {format_tribute_list(alliance.members)} are fast enough to escape unharmed."
+
+class SabotageEvent(InterAllianceEvent):
+    """
+    Inter-Alliance: Sneak into a camp and destroy supplies.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Sabotage"
+        self.tags = ["stealth", "sabotage"]
+        self.weight = 6
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        if not game_engine_ref: return "Nothing happens."
+        
+        targets = self.get_valid_targets(alliance, game_engine_ref)
+        if not targets: return f"{format_tribute_list(alliance.members)} plans a sabotage mission but finds no targets."
+        target_alliance = random.choice(targets)
+        
+        # Skill Check
+        saboteur = max(alliance.members, key=lambda t: t.get_effective_stat('stealth'))
+        
+        # Stealth vs Intel
+        if saboteur.get_effective_stat('stealth') + random.randint(1,10) > 12:
+            # Success: Find food or weapons to destroy
+            destroyed = []
+            
+            # Check Target Inventory
+            # We target shared inventory first as it represents the "camp stockpile"
+            if target_alliance.shared_inventory:
+                # Destroy up to 4 items
+                to_destroy = target_alliance.shared_inventory[:4]
+                for item in to_destroy:
+                    target_alliance.shared_inventory.remove(item)
+                    destroyed.append(item.name)
+            
+            # If no shared, try personal
+            elif target_alliance.members[0].inventory:
+                 item = target_alliance.members[0].inventory.pop()
+                 destroyed.append(item.name)
+
+            if destroyed:
+                names = ", ".join(destroyed)
+                return f"{saboteur.name} sneaks into {format_tribute_list(target_alliance.members)}'s camp and destroys their {names}!"
+            else:
+                return f"{saboteur.name} infiltrates {format_tribute_list(target_alliance.members)}'s camp but they have nothing worth destroying."
+
+        return f"{saboteur.name} attempts to sabotage {format_tribute_list(target_alliance.members)} but is forced to retreat."
+    
+class (ComplexEvent):
+    """
+    Complex: A high-intel character heals a critically injured ally using nature.
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Miracle Heal"
+        self.tags = ["medical", "social"]
+        self.min_size = 2 # Need healer and patient
+        self.weight = 6
+
+    def execute(self, alliance, terrain, game_engine_ref=None):
+        # 1. Find a Medic (Intel > 7)
+        medic = next((m for m in alliance.members if m.stats['intel'] >= 7), None)
+
+        # 2. Find a Patient (Health < 30 or Injured/Poisoned)
+        patient = next((m for m in alliance.members if m != medic and (m.health < 40 or m.injured or m.poisoned)), None)
+        
+        if not medic and not patient:
+            return f"{format_tribute_list(alliance.members)} looks for a way to heal, but no one has the knowledge."
+        elif not medic and patient:
+            return f"{patient.name} is gravely ill, but no one knows how to help them."
+        elif medic and not patient:
+            return f"{medic.name} gathers medicinal herbs, just in case."
+        elif medic and patient:
+            # 3. Perform Heal
+            patient.health = min(patient.max_health, patient.health + 25)
+            patient.injured = False
+            patient.poisoned = False
+            
+            return f"{patient.name} is on the brink of death, but {medic.name} manages to stabilize them using medicinal plants found nearby."
 
 class EventManager:
     """
@@ -772,7 +1016,8 @@ class EventManager:
             ScavengeEvent(), AmicableDisbandEvent(), FormAllianceEvent(), CombatEvent(), 
             CorpseLootEvent(), AmicableTradeEvent(), TenseTradeEvent(), 
             ThiefEvent(), RiskyTheftEvent(), SpyEvent(), 
-            ForceSplitEvent(), ExtinctionPreventionEvent(), BloodbathEvent(), FeastEvent()
+            ForceSplitEvent(), ExtinctionPreventionEvent(), BloodbathEvent(), FeastEvent(),
+            BetrayalEvent(), SmartSponsorEvent(), DefectionEvent(), WildfireEvent(), SabotageEvent(), MiracleHealEvent()
         ])
         self.load_json_events()
 

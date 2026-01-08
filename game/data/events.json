@@ -2,11 +2,11 @@
     {
         "id": "scavenge_berries",
         "text": "{t1} finds a bush full of berries and has a decent meal.",
-        "tags": ["forest", "scavenge"],
+        "tags": ["scavenge", "forest"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 15,
+        "weight": 10,
         "effects": { "health": 5 }
     },
     {
@@ -16,7 +16,7 @@
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 15,
+        "weight": 8,
         "effects": { "health": 5 }
     },
     {
@@ -56,7 +56,7 @@
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 8,
+        "weight": 4,
         "effects": { "health": -5, "speed": -1 }
     },
     {
@@ -97,7 +97,7 @@
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 10,
+        "weight": 12,
         "effects": { "health": -5, "intel": 1 }
     },
     {
@@ -240,7 +240,7 @@
         "tributes_needed": 2,
         "min_size": 2,
         "max_size": 6,
-        "weight": 2,
+        "weight": 6,
         "kills": [1]
     },
     {
@@ -313,15 +313,6 @@
         "min_size": 1,
         "max_size": 6,
         "weight": 10
-    },
-    {
-        "id": "hear_cannon",
-        "text": "A cannon fires. {t1} looks up at the sky, counting the fallen.",
-        "tags": ["idle", "death"],
-        "tributes_needed": 1,
-        "min_size": 1,
-        "max_size": 6,
-        "weight": 15
     },
     {
         "id": "fix_gear",
@@ -540,7 +531,7 @@
         "tributes_needed": 2,
         "min_size": 2,
         "max_size": 6,
-        "weight": 3,
+        "weight": 8,
         "kills": [1],
         "effects": { "stealth": 1 }
     },
@@ -630,7 +621,7 @@
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 6,
+        "weight": 8,
         "effects": { "intel": -1 }
     },
     {

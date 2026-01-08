@@ -144,11 +144,9 @@ class GameEngine:
 
             # Inject
             if item_name in lookup:
-                print(f"[GameMaker] Injecting 1x {item_name} for proficiency balance.")
                 proto = lookup[item_name]
                 self.terrain.finite_items.append(Item(proto.name, proto.kind, proto.bonuses))
             else:
-                print(f"[GameMaker] Tribute proficient in '{item_name}' (Unknown). Creating generic version.")
                 self.terrain.finite_items.append(Item(item_name, "weapon", {"strength": 2}))
 
     def get_alive_tributes(self) -> list[Tribute]:
@@ -221,8 +219,7 @@ class GameEngine:
                     
                 # Search Inventories (Personal First, then Shared)
                 inventories = [(tribute.inventory, "personal")]
-                if hasattr(alliance, 'shared_inventory'):
-                    inventories.append((alliance.shared_inventory, "shared"))
+                inventories.append((alliance.shared_inventory, "shared"))
                     
                 item_used = None
                 source_list = []
@@ -385,7 +382,7 @@ class GameEngine:
         
         # 3. Consolidate items from single-member alliances
         for alliance in self.alliances:
-            if len(alliance.members) == 1 and hasattr(alliance, 'shared_inventory') and alliance.shared_inventory:
+            if len(alliance.members) == 1 and alliance.shared_inventory:
                 member = alliance.members[0]
                 member.inventory.extend(alliance.shared_inventory)
                 alliance.shared_inventory = []

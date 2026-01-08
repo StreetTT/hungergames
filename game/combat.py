@@ -108,18 +108,17 @@ class CombatResolver:
 
         # 2. Shared Inventory Bonuses
         # We add the raw stat values from shared items to the group total
-        if hasattr(alliance, 'shared_inventory'):
-            for item in alliance.shared_inventory:
-                if mode == "attack":
-                    # Attack power from shared weapons
-                    total_power += item.bonuses.get('strength', 0)
-                else:
-                    # Defense power from shared armor/shields
-                    total_power += item.bonuses.get('defense', 0)
+        for item in alliance.shared_inventory:
+            if mode == "attack":
+                # Attack power from shared weapons
+                total_power += item.bonuses.get('strength', 0)
+            else:
+                # Defense power from shared armor/shields
+                total_power += item.bonuses.get('defense', 0)
 
         return total_power
 
-    def _apply_outcome(self, winners: Alliance, losers: Alliance, margin: float, lethality_scale: float = 1.0) -> str:
+    def _apply_outcome(self, winners: Alliance, losers: Alliance, margin: float, lethality_scale: float = 2.5) -> str:
         """
         Determines who gets hurt/killed based on the victory margin.
         Can result in multiple deaths.
@@ -162,7 +161,7 @@ class CombatResolver:
                 stolen_item = None
                 if victim.inventory:
                     stolen_item = victim.inventory.pop()
-                elif hasattr(losers, 'shared_inventory') and losers.shared_inventory:
+                elif losers.shared_inventory:
                     stolen_item = losers.shared_inventory.pop()
                 
                 if stolen_item:
