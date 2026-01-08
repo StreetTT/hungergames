@@ -17,6 +17,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/test_sim.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Batch Simulation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/batch_sim.py",
+            "console": "integratedTerminal"
         }
     ]
 }

@@ -17,7 +17,6 @@ class GameEvent(ABC):
         self.base_weight: float = data.get('weight', 5)
         self.text_template: str = data.get('text', '')
                 
-        
         # Group size constraints
         self.tributes_needed = data.get('tributes_needed', 1)
         self.min_size: int = data.get('min_size', self.tributes_needed)
@@ -279,11 +278,10 @@ class ThiefEvent(InterAllianceEvent):
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
-
-        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
-        if not neighbors: return f"{format_tribute_list(alliance.members)} sneaks around but finds no one."
+        targets = self.get_valid_targets(alliance, game_engine_ref)
+        if not targets: return f"{format_tribute_list(alliance.members)} sneaks around but finds no one."
         
-        target = random.choice(neighbors)
+        target = random.choice(targets)
         
         # Check Stealth vs Intel
         if self.get_skill_check(alliance.members, target.members, 'stealth', 'intel'):
@@ -309,37 +307,21 @@ class RiskyTheftEvent(InterAllianceEvent, CombatEvent):
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
-        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
-        if not neighbors: return f"{format_tribute_list(alliance.members)} stalks the shadows alone."
+        targets = self.get_valid_targets(alliance, game_engine_ref)
+        if not targets: return f"{format_tribute_list(alliance.members)} stalks the shadows alone."
         
-        target = random.choice(neighbors)
+        target = random.choice(targets)
         
-        # Harder check: Stealth vs Intel + 5
-        my_stealth = max(t.get_effective_stat('stealth') for t in alliance.members)
-        their_intel = max(t.get_effective_stat('intel') for t in target.members)
+        # Stealth vs Intel (+5 Difficulty)
+        if self.get_skill_check(alliance.members, target.members, 'stealth', 'intel', difficulty_mod=5):
+            stolen = self.attempt_theft(alliance, target, amount=2)
+            if stolen:
+                names = ", ".join([i.name for i in stolen])
+                return f"{format_tribute_list(alliance.members)} pulls off a master heist, stealing {names} from {format_tribute_list(target.members)}!"
+            return f"{format_tribute_list(alliance.members)} infiltrates {format_tribute_list(target.members)}'s camp but they have nothing left."
         
-        if my_stealth + random.randint(1, 10) > their_intel + 5 + random.randint(1, 10):
-            # SUCCESS (Steal 2 items or 1 good one)
-            stolen_items = []
-            # Try to take up to 2 items
-            for _ in range(2):
-                item = None
-                if target.members[0].inventory: item = target.members[0].inventory.pop(0)
-                elif target.shared_inventory: item = target.shared_inventory.pop(0)
-                if item: stolen_items.append(item)
-            
-            if stolen_items:
-                for i in stolen_items:
-                    if len(alliance.members) == 1: alliance.members[0].inventory.append(i)
-                    else: alliance.shared_inventory.append(i)
-                item_names = ", ".join([i.name for i in stolen_items])
-                return f"{format_tribute_list(alliance.members)} pulls off a master heist, stealing {item_names} from {format_tribute_list(target.members)}!"
-            else:
-                return f"{format_tribute_list(alliance.members)} infiltrates {format_tribute_list(target.members)}'s camp but they have nothing left."
-        else:
-            # FAIL -> COMBAT
-            return f"{format_tribute_list(alliance.members)} is caught trying to steal from {format_tribute_list(target.members)}! {self.resolver.resolve_fight(target, alliance, terrain, game_engine=game_engine_ref)}"
-
+        # FAIL -> COMBAT
+        return f"{format_tribute_list(alliance.members)} is caught stealing from {format_tribute_list(target.members)}! {self.resolver.resolve_fight(target, alliance, terrain, game_engine_ref)}"
 
 class SpyEvent(InterAllianceEvent, CombatEvent):
     """
@@ -349,28 +331,22 @@ class SpyEvent(InterAllianceEvent, CombatEvent):
         super().__init__()
         self.name = "Spy"
         self.tags = ["stealth", "intel"]
-        self.min_size = 1
-        self.max_size = 99
-        self.weight = 12
+        self.weight = 8
+        self.resolver = CombatResolver()
 
     def execute(self, alliance, terrain, game_engine_ref=None):
         if not game_engine_ref: return "Nothing happens."
-        neighbors = [a for a in game_engine_ref.alliances if a != alliance and a.is_active]
-        if not neighbors: return f"{format_tribute_list(alliance.members)} watches the horizon."
+        targets = self.get_valid_targets(alliance, game_engine_ref)
+        if not targets: return f"{format_tribute_list(alliance.members)} watches the horizon."
         
-        target = random.choice(neighbors)
+        target = random.choice(targets)
         
-        my_stealth = max(t.get_effective_stat('stealth') for t in alliance.members)
-        their_perception = max(t.get_effective_stat('intel') for t in target.members)
-        
-        if my_stealth + random.randint(1, 10) > their_perception + random.randint(1, 10):
-            # SUCCESS
+        if self.get_skill_check(alliance.members, target.members, 'stealth', 'intel'):
             for t in alliance.members:
                 t.stats['intel'] = min(10, t.stats['intel'] + 1)
             return f"{format_tribute_list(alliance.members)} spies on {format_tribute_list(target.members)}, learning valuable information."
-        else:
-            # FAIL -> COMBAT (Target attacks Spy)
-            return f"{format_tribute_list(alliance.members)} is spotted spying on {format_tribute_list(target.members)}! {self.resolver.resolve_fight(target, alliance, terrain, game_engine=game_engine_ref)}"
+        
+        return f"{format_tribute_list(alliance.members)} is spotted spying on {format_tribute_list(target.members)}! {self.resolver.resolve_fight(target, alliance, terrain, game_engine_ref)}"
 
 
 class SpecialEvent(GameEvent):
@@ -973,7 +949,7 @@ class SabotageEvent(InterAllianceEvent):
 
         return f"{saboteur.name} attempts to sabotage {format_tribute_list(target_alliance.members)} but is forced to retreat."
     
-class (ComplexEvent):
+class MiracleHealEvent(ComplexEvent):
     """
     Complex: A high-intel character heals a critically injured ally using nature.
     """
