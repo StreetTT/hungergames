@@ -1,341 +1,714 @@
 [
     {
-        "id": "hunt_solo",
-        "text": "{t1} goes hunting.",
-        "tags": ["forest"],
+        "id": "scavenge_berries",
+        "text": "{t1} finds a bush full of berries and has a decent meal.",
+        "tags": ["forest", "scavenge"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "weight": 10
+        "weight": 15,
+        "effects": { "health": 5 }
     },
     {
-        "id": "injure_self",
-        "text": "{t1} injures {him1}self.",
+        "id": "drink_stream",
+        "text": "{t1} finds a clear stream and drinks their fill.",
+        "tags": ["water", "scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 15,
+        "effects": { "health": 5 }
+    },
+    {
+        "id": "find_cave",
+        "text": "{t1} discovers a small cave suitable for shelter.",
+        "tags": ["forest", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "effects": { "defense": 1 }
+    },
+    {
+        "id": "climb_tree_lookout",
+        "text": "{t1} climbs a tall tree to get a better view of the arena.",
+        "tags": ["forest", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 12,
+        "effects": { "intel": 1 }
+    },
+    {
+        "id": "sharpen_stick",
+        "text": "{t1} spends the afternoon sharpening a stick.",
+        "tags": ["idle", "crafting"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "gain_items": ["Wooden Spear"]
+    },
+    {
+        "id": "trip_root",
+        "text": "{t1} trips over a tree root and twists {his1} ankle.",
+        "tags": ["forest", "accident"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "health": -5, "speed": -1 }
+    },
+    {
+        "id": "chase_squirrel",
+        "text": "{t1} chases a squirrel for food but fails to catch it.",
+        "tags": ["forest", "funny"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "health": -2 }
+    },
+    {
+        "id": "catch_fish_hands",
+        "text": "{t1} manages to catch a fish with {his1} bare hands!",
+        "tags": ["water", "scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "gain_items": ["Fresh Food"],
+        "effects": { "speed": 1 }
+    },
+    {
+        "id": "night_nightmare",
+        "text": "{t1} screams in {his1} sleep, having a nightmare about home.",
+        "tags": ["night", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "effects": { "intel": -1 }
+    },
+    {
+        "id": "night_watch",
+        "text": "{t1} stays awake all night to keep watch.",
+        "tags": ["night", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "effects": { "health": -5, "intel": 1 }
+    },
+    {
+        "id": "admire_weapon",
+        "text": "{t1} polishes {his1} weapon, looking menacing.",
         "tags": ["idle"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "effects": {"health": -10, "injured": 1},
-        "weight": 5
+        "weight": 8,
+        "effects": { "aggression": 1 }
     },
     {
-        "id": "scare",
-        "text": "{t1} scares {t2}.",
-        "tags": ["social"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "weight": 10
-    },
-    {
-        "id": "craft_spear",
-        "text": "{t1} makes a wooden spear.",
+        "id": "camoflauge_self",
+        "text": "{t1} covers {him1}self in mud and leaves to stay hidden.",
         "tags": ["forest", "crafting"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Wooden Spear"],
-        "weight": 5
+        "weight": 8,
+        "effects": { "stealth": 2 }
     },
     {
-        "id": "collect_fruit",
-        "text": "{t1} collects fruit from a tree.",
-        "tags": ["forest"],
+        "id": "insect_sting",
+        "text": "{t1} is stung by a tracker jacker! The hallucination begins.",
+        "tags": ["forest", "accident"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Fruit"],
-        "weight": 10
+        "weight": 3,
+        "effects": { "health": -15, "intel": -2, "poisoned": 1 }
     },
     {
-        "id": "sponsor_hatchet",
-        "text": "{t1} receives a hatchet from an unknown sponsor.",
-        "tags": ["sponsor"],
+        "id": "find_clean_water",
+        "text": "{t1} discovers a hidden spring of clean water.",
+        "tags": ["water", "scavenge"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Hatchet"],
-        "weight": 5
+        "weight": 5,
+        "gain_items": ["Clean Water"]
     },
     {
-        "id": "sponsor_water",
-        "text": "{t1} receives clean water from an unknown sponsor.",
-        "tags": ["sponsor"],
-        "tributes_needed": 1,
-        "min_size": 1,
-        "max_size": 6,
-        "gain_items": ["Clean Water"],
-        "effects": {"health": 5},
-        "weight": 5
-    },
-    {
-        "id": "sponsor_medical",
-        "text": "{t1} receives medical supplies from an unknown sponsor.",
-        "tags": ["sponsor"],
-        "tributes_needed": 1,
-        "min_size": 1,
-        "max_size": 6,
-        "effects": {"health": 10, "injured": 0, "poisoned": 0},
-        "weight": 5
-    },
-    {
-        "id": "craft_slingshot",
-        "text": "{t1} makes a slingshot.",
+        "id": "craft_bandage",
+        "text": "{t1} tears a piece of {his1} clothing to make a bandage.",
         "tags": ["crafting"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Slingshot"],
-        "weight": 5
+        "weight": 8,
+        "gain_items": ["Bandages"]
     },
     {
-        "id": "sponsor_explosive",
-        "text": "{t1} receives an explosive from an unknown sponsor.",
-        "tags": ["sponsor"],
+        "id": "contemplate_life",
+        "text": "{t1} sits by the water and wonders if {he1} will ever go home.",
+        "tags": ["idle", "water"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "gain_items": ["Explosive"],
-        "weight": 2
+        "weight": 12
     },
     {
-        "id": "sanity_check",
-        "text": "{t1} questions {his1} sanity.",
+        "id": "practice_sparring",
+        "text": "{t1} and {t2} spar with sticks to practice fighting.",
+        "tags": ["social", "combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "strength": 1, "defense": 1 }
+    },
+    {
+        "id": "deep_conversation",
+        "text": "{t1} and {t2} talk about their families back in the districts.",
+        "tags": ["social", "night"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 10,
+        "effects": { "health": 5 }
+    },
+    {
+        "id": "argument_supplies",
+        "text": "{t1} gets angry at {t2} for eating too much food.",
+        "tags": ["social", "conflict"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "aggression": 1 }
+    },
+    {
+        "id": "heal_ally",
+        "text": "{t1} tends to {t2}'s wounds.",
+        "tags": ["social", "medical"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "requires_item": "Medical Supplies",
+        "lose_items": ["Medical Supplies"],
+        "effects": { "health": 20, "injured": -1 }
+    },
+    {
+        "id": "share_food",
+        "text": "{t1} shares {his1} food with {t2}.",
+        "tags": ["social"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 8,
+        "requires_item": "Fresh Food",
+        "lose_items": ["Fresh Food"],
+        "effects": { "health": 10 }
+    },
+    {
+        "id": "prank_ally",
+        "text": "{t1} plays a prank on {t2}, briefly lightening the mood.",
+        "tags": ["social", "funny"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": 2 }
+    },
+    {
+        "id": "accidental_injury_group",
+        "text": "{t1} accidentally swings a weapon too wide and cuts {t2}.",
+        "tags": ["accident", "combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 4,
+        "effects": { "health": -10, "injured": 1 }
+    },
+    {
+        "id": "betrayal_push",
+        "text": "{t1} pushes {t2} off a cliff while {he2} isn't looking.",
+        "tags": ["death", "betrayal"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 2,
+        "kills": [1]
+    },
+    {
+        "id": "rain_storm",
+        "text": "A heavy rainstorm soaks the group. {t1}, {t2}, and {t3} huddle for warmth.",
+        "tags": ["weather", "social"],
+        "tributes_needed": 3,
+        "min_size": 3,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -2 }
+    },
+    {
+        "id": "group_hunt",
+        "text": "{t1}, {t2}, and {t3} work together to hunt a wild boar.",
+        "tags": ["forest", "combat"],
+        "tributes_needed": 3,
+        "min_size": 3,
+        "max_size": 6,
+        "weight": 5,
+        "gain_items": ["Fresh Food", "Fresh Food"],
+        "effects": { "strength": 1 }
+    },
+    {
+        "id": "find_sponsor_gift",
+        "text": "{t1} spots a silver parachute caught in a tree and retrieves it.",
+        "tags": ["scavenge", "sponsor"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "gain_items": ["Medical Supplies"]
+    },
+    {
+        "id": "eat_bad_berries",
+        "text": "{t1} eats berries that look safe, but starts feeling sick.",
+        "tags": ["forest", "accident"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -10, "poisoned": 1 }
+    },
+    {
+        "id": "fall_tree",
+        "text": "{t1} falls out of a tree while sleeping.",
+        "tags": ["accident", "funny"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -15, "injured": 1 }
+    },
+    {
+        "id": "weapon_training",
+        "text": "{t1} practices throwing knives at trees.",
+        "tags": ["idle", "training"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "requires_item": "Knife",
+        "effects": { "strength": 1, "aggression": 1 }
+    },
+    {
+        "id": "spot_smoke",
+        "text": "{t1} spots smoke in the distance but decides not to investigate.",
         "tags": ["idle"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "effects": {"intel": -1},
-        "weight": 5
+        "weight": 10
     },
     {
-        "id": "night_fire",
-        "text": "{t1} starts a fire.",
-        "tags": ["night"],
+        "id": "hear_cannon",
+        "text": "A cannon fires. {t1} looks up at the sky, counting the fallen.",
+        "tags": ["idle", "death"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 15
+    },
+    {
+        "id": "fix_gear",
+        "text": "{t1} spends time repairing {his1} gear.",
+        "tags": ["idle", "crafting"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
         "weight": 10
     },
     {
-        "id": "night_cuddle",
-        "text": "{t1} convinces {t2} to snuggle with {him1}.",
+        "id": "singing",
+        "text": "{t1} quietly sings a song from home.",
+        "tags": ["idle", "social"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "health": 2 }
+    },
+    {
+        "id": "cry_alone",
+        "text": "{t1} curls up in a ball and cries.",
+        "tags": ["idle", "sad"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -2 }
+    },
+    {
+        "id": "make_trap",
+        "text": "{t1} constructs a simple snare trap.",
+        "tags": ["crafting"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "intel": 1 }
+    },
+    {
+        "id": "trap_success",
+        "text": "{t1} checks {his1} trap and finds a rabbit!",
+        "tags": ["scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "gain_items": ["Fresh Food"]
+    },
+    {
+        "id": "trap_fail",
+        "text": "{t1} checks {his1} trap but finds it empty.",
+        "tags": ["scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8
+    },
+    {
+        "id": "attack_wolf_win",
+        "text": "{t1} is attacked by a wild mutt but manages to kill it.",
+        "tags": ["combat", "pve"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 4,
+        "effects": { "health": -10, "strength": 1 }
+    },
+    {
+        "id": "attack_wolf_lose",
+        "text": "{t1} is mauled by a pack of mutts.",
+        "tags": ["death", "pve"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 2,
+        "kills": [0]
+    },
+    {
+        "id": "find_explosives",
+        "text": "{t1} steps carefully around a minefield and disarms a mine.",
+        "tags": ["scavenge", "dangerous"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 2,
+        "effects": { "intel": 2 },
+        "gain_items": ["Land Mine"]
+    },
+    {
+        "id": "mine_accident",
+        "text": "{t1} tries to disarm a mine but fails.",
+        "tags": ["death", "accident"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 2,
+        "kills": [0]
+    },
+    {
+        "id": "freeze_night",
+        "text": "{t1} shivers uncontrollably through the freezing night.",
+        "tags": ["night", "weather"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "health": -10 }
+    },
+    {
+        "id": "huddle_warmth",
+        "text": "{t1} and {t2} huddle together for warmth.",
         "tags": ["night", "social"],
         "tributes_needed": 2,
         "min_size": 2,
         "max_size": 6,
-        "effects": {"health": 5},
-        "weight": 5
+        "weight": 8,
+        "effects": { "health": 5 }
     },
     {
-        "id": "night_stories_4",
-        "text": "{t1}, {t2}, {t3}, and {t4} tell each other ghost stories to lighten the mood.",
-        "tags": ["night", "social"],
-        "tributes_needed": 4,
-        "min_size": 4,
-        "max_size": 6,
-        "weight": 5
-    },
-    {
-        "id": "kill_off_guard",
-        "text": "{t1} catches {t2} off guard and kills {him2}.",
-        "tags": ["death"],
+        "id": "hallucination",
+        "text": "{t1} hallucinates that {t2} is {his1} sibling.",
+        "tags": ["idle", "mental"],
         "tributes_needed": 2,
         "min_size": 2,
         "max_size": 6,
-        "kills": [1],
-        "weight": 10
+        "weight": 4,
+        "effects": { "intel": -1 }
     },
     {
-        "id": "kill_knife_throw",
-        "text": "{t1} throws a knife into {t2}'s head.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Knife",
-        "kills": [1],
-        "weight": 10
-    },
-    {
-        "id": "suicide_pact_reluctant",
-        "text": "{t1} begs for {t2} to kill {him1}. {t2} reluctantly obliges, killing {t1}.",
-        "tags": ["death", "social"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "kills": [0],
-        "weight": 2
-    },
-    {
-        "id": "kill_drown_group",
-        "text": "{t1} and {t2} work together to drown {t3}.",
-        "tags": ["death", "water"],
+        "id": "strategy_meeting",
+        "text": "{t1}, {t2}, and {t3} plan their next move.",
+        "tags": ["social", "intel"],
         "tributes_needed": 3,
         "min_size": 3,
         "max_size": 6,
-        "kills": [2],
-        "weight": 5
+        "weight": 6,
+        "effects": { "intel": 1 }
     },
     {
-        "id": "suicide_pact_4",
-        "text": "{t1}, {t2}, {t3}, and {t4} form a suicide pact, killing themselves.",
-        "tags": ["death"],
-        "tributes_needed": 4,
-        "min_size": 4,
-        "max_size": 6,
-        "kills": [0, 1, 2, 3],
-        "weight": 1
-    },
-    {
-        "id": "kill_explosive_5",
-        "text": "{t1} sets an explosive off, killing {t2}, {t3}, {t4} and {t5}.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 5,
-        "min_size": 5,
-        "max_size": 6,
-        "requires_item": "Explosive",
-        "lose_items": ["Explosive"],
-        "kills": [1, 2, 3, 4],
-        "weight": 1
-    },
-    {
-        "id": "death_mine_accident",
-        "text": "{t1} accidentally steps on a landmine.",
-        "tags": ["death"],
+        "id": "find_medkit",
+        "text": "{t1} finds a medical kit near the Cornucopia.",
+        "tags": ["scavenge"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "kills": [0],
-        "weight": 5
+        "weight": 3,
+        "gain_items": ["Medkit"]
     },
     {
-        "id": "kill_sickle",
-        "text": "{t1} kills {t2} with a sickle.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Sickle",
-        "kills": [1],
-        "weight": 8
-    },
-    {
-        "id": "kill_trident_back",
-        "text": "{t1} stabs {t2} in the back with a trident.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Trident",
-        "kills": [1],
-        "weight": 8
-    },
-    {
-        "id": "kill_mace",
-        "text": "{t1} bashes {t2}'s head in with a mace.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Mace",
-        "kills": [1],
-        "weight": 8
-    },
-    {
-        "id": "kill_molotov",
-        "text": "{t1} sets {t2} on fire with a molotov.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Molotov",
-        "lose_items": ["Molotov"],
-        "kills": [1],
-        "weight": 8
-    },
-    {
-        "id": "kill_sais",
-        "text": "{t1} repeatedly stabs {t2} to death with sais.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 2,
-        "min_size": 2,
-        "max_size": 6,
-        "requires_item": "Sais",
-        "kills": [1],
-        "weight": 8
-    },
-    {
-        "id": "death_poison_berries",
-        "text": "{t1} unknowingly eats poisonous berries.",
-        "tags": ["death", "forest"],
+        "id": "lose_supplies_river",
+        "text": "{t1} drops {his1} bag in the river and loses some food.",
+        "tags": ["accident", "water"],
         "tributes_needed": 1,
         "min_size": 1,
         "max_size": 6,
-        "effects": {"health": -5, "poisoned": 1},
-        "weight": 5
-    },
-    {
-        "id": "hunt_group_6",
-        "text": "{t1}, {t2}, and {t3} successfully ambush and kill {t4}, {t5}, and {t6}.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 6,
-        "min_size": 6,
-        "max_size": 6,
-        "kills": [3, 4, 5],
-        "weight": 1
-    },
-    {
-        "id": "fail_ambush_6",
-        "text": "{t1}, {t2}, and {t3} unsuccessfully ambush {t4}, {t5}, and {t6}, who kill them instead.",
-        "tags": ["death", "combat"],
-        "tributes_needed": 6,
-        "min_size": 6,
-        "max_size": 6,
-        "kills": [0, 1, 2],
-        "weight": 1
-    },
-    {
-        "id": "spy_on_camp",
-        "type": "interaction",
-        "text": "{t1} spies on {e1}'s camp, learning their habits.",
-        "tags": ["stealth", "forest"],
-        "tributes_needed": 1,
-        "targets_needed": 1,
-        "weight": 10,
-        "effects": {
-            "intel": 1
-        }
-    },
-    {
-        "id": "steal_supplies_interaction",
-        "type": "interaction",
-        "text": "{t1} sneaks into {e1}'s shelter and steals supplies while {he_e1} sleeps.",
-        "tags": ["stealth", "scavenge"],
-        "tributes_needed": 1,
-        "targets_needed": 1,
-        "weight": 8,
-        "gain_items": ["Fresh Food"],
-        "target_lose_items": ["Fresh Food", "Apple"] 
-    },
-    {
-        "id": "uneasy_truce",
-        "type": "interaction",
-        "text": "{t1} and {e1} cross paths but decide to ignore each other for now.",
-        "tags": ["social"],
-        "tributes_needed": 1,
-        "targets_needed": 1,
-        "weight": 10
-    },
-    {
-        "id": "distant_taunt",
-        "type": "interaction",
-        "text": "{t1} shouts insults at {e1} from a safe distance.",
-        "tags": ["social"],
-        "tributes_needed": 1,
-        "targets_needed": 1,
         "weight": 5,
-        "effects": {"aggression": 1},
-        "target_effects": {"aggression": 1}
+        "lose_items": ["Fresh Food"]
+    },
+    {
+        "id": "break_weapon",
+        "text": "{t1}'s spear snaps in half while practicing.",
+        "tags": ["accident"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 4,
+        "lose_items": ["Wooden Spear"]
+    },
+    {
+        "id": "sponsor_bread",
+        "text": "{t1} receives a loaf of warm bread from a sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "gain_items": ["Bread"],
+        "effects": { "health": 5 }
+    },
+    {
+        "id": "sponsor_soup",
+        "text": "{t1} receives a bowl of hot soup from a sponsor.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "health": 15 }
+    },
+    {
+        "id": "climb_fail",
+        "text": "{t1} attempts to climb a rock wall but slides down, scraping {his1} hands.",
+        "tags": ["accident"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "effects": { "health": -5 }
+    },
+    {
+        "id": "observe_stars",
+        "text": "{t1} points out constellations to {t2}.",
+        "tags": ["night", "social"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "intel": 1 }
+    },
+    {
+        "id": "kill_sleeping",
+        "text": "{t1} tracks down and kills {t2} while {he2} is sleeping.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 3,
+        "kills": [1],
+        "effects": { "stealth": 1 }
+    },
+    {
+        "id": "strangle_fight",
+        "text": "{t1} gets into a brawl with {t2} and strangles {him2}.",
+        "tags": ["death", "combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 4,
+        "kills": [1],
+        "effects": { "health": -10 }
+    },
+    {
+        "id": "mercy_kill",
+        "text": "{t1} puts {t2} out of {his2} misery.",
+        "tags": ["death", "sad"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 2,
+        "kills": [1]
+    },
+    {
+        "id": "double_drown",
+        "text": "{t1} and {t2} fight in the river and both drown.",
+        "tags": ["death", "water"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 1,
+        "kills": [0, 1]
+    },
+    {
+        "id": "mockingjay_mimic",
+        "text": "{t1} whistles to a Mockingjay, and it whistles back.",
+        "tags": ["idle", "forest"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8
+    },
+    {
+        "id": "forest_fire_run",
+        "text": "A forest fire breaks out! {t1} runs for {his1} life.",
+        "tags": ["gamemaker", "danger"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 3,
+        "effects": { "health": -10, "speed": 1 }
+    },
+    {
+        "id": "forest_fire_death",
+        "text": "{t1} is caught in a Gamemaker-instigated forest fire.",
+        "tags": ["death", "gamemaker"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 1,
+        "kills": [0]
+    },
+    {
+        "id": "find_night_vision",
+        "text": "{t1} loots a pair of Night Vision Goggles from a crate.",
+        "tags": ["scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 2,
+        "gain_items": ["Night Vision"]
+    },
+    {
+        "id": "wash_clothes",
+        "text": "{t1} washes {his1} clothes in the river.",
+        "tags": ["idle", "water"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8
+    },
+    {
+        "id": "paranoia",
+        "text": "{t1} thinks {he1} hears footsteps and hides for hours.",
+        "tags": ["idle", "stealth"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "effects": { "intel": -1 }
+    },
+    {
+        "id": "arrow_miss",
+        "text": "{t1} shoots an arrow at {t2}, but misses.",
+        "tags": ["combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "requires_item": "Bow"
+    },
+    {
+        "id": "arrow_hit",
+        "text": "{t1} shoots an arrow into {t2}'s leg.",
+        "tags": ["combat"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "requires_item": "Bow",
+        "effects": { "health": -20, "injured": 1 }
+    },
+    {
+        "id": "spear_fish_fail",
+        "text": "{t1} tries to spear a fish but slips and falls in the water.",
+        "tags": ["scavenge", "funny"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "requires_item": "Spear"
+    },
+    {
+        "id": "sharpen_knife",
+        "text": "{t1} sharpens {his1} knife against a rock.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "requires_item": "Knife",
+        "effects": { "aggression": 1 }
+    },
+    {
+        "id": "camoflauge_paint",
+        "text": "{t1} uses camo paint to blend into the foliage.",
+        "tags": ["crafting"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "requires_item": "Camo Paint",
+        "lose_items": ["Camo Paint"],
+        "effects": { "stealth": 3 }
+    },
+    {
+        "id": "eat_fresh_fruit",
+        "text": "{t1} enjoys a piece of fresh fruit.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "requires_item": "Fruit",
+        "lose_items": ["Fruit"],
+        "effects": { "health": 10 }
+    },
+    {
+        "id": "drink_clean_water",
+        "text": "{t1} drinks a bottle of clean water.",
+        "tags": ["idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "requires_item": "Clean Water",
+        "lose_items": ["Clean Water"],
+        "effects": { "health": 10 }
     }
 ]

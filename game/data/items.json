@@ -1,0 +1,39 @@
+[
+
+        {"name":"Sword", "kind":"weapon", "bonuses":{"strength": 3}, "qty": 2},
+        {"name":"Mace", "kind":"weapon", "bonuses":{"strength": 5, "speed": -2}, "qty": 1},
+        {"name":"Sickle", "kind":"weapon", "bonuses":{"strength": 3, "speed": 1}, "qty": 1},
+        {"name":"Sais", "kind":"weapon", "bonuses":{"strength": 2, "speed": 3, "defense": 1}, "qty": 1},
+        {"name":"Hatchet", "kind":"weapon", "bonuses":{"strength": 3}, "qty": 2},
+        {"name":"Trident", "kind":"weapon", "bonuses":{"strength": 4, "speed": 1}, "qty": 1},
+        {"name":"Axe", "kind":"weapon", "bonuses":{"strength": 4, "speed": -1}, "qty": 1},
+        {"name":"Knife", "kind":"weapon", "bonuses":{"strength": 1, "speed": 3, "stealth": 1}, "qty": null}, 
+        
+
+        {"name":"Bow", "kind":"weapon", "bonuses":{"strength": 2, "speed": 2}, "qty": 1},
+        {"name":"Slingshot", "kind":"weapon", "bonuses":{"strength": 1, "speed": 2}, "qty": null},
+        {"name":"Blow Dart", "kind":"weapon", "bonuses":{"strength": 1, "stealth": 4}, "qty": 1},
+        {"name":"Explosive", "kind":"weapon", "bonuses":{"strength": 10, "aggression": 2}, "qty": 1},
+        {"name":"Land Mine", "kind":"weapon", "bonuses":{"strength": 10, "stealth": 5}, "qty": 1},
+        {"name":"Molotov", "kind":"weapon", "bonuses":{"strength": 6, "aggression": 3}, "qty": 2},
+        {"name":"Wooden Spear", "kind":"weapon", "bonuses":{"strength": 2, "speed": 1}, "qty": null},
+
+
+        {"name":"Apple", "kind":"food", "bonuses":{"health": 5}, "qty": null},
+        {"name":"Fruit", "kind":"food", "bonuses":{"health": 5}, "qty": null},
+        {"name":"Bread", "kind":"food", "bonuses":{"health": 10}, "qty": null},
+        {"name":"Fresh Food", "kind":"food", "bonuses":{"health": 15}, "qty": 5},
+        {"name":"Water", "kind":"food", "bonuses":{"health": 5, "speed": 1}, "qty": null},
+        {"name":"Clean Water", "kind":"food", "bonuses":{"health": 10, "speed": 1}, "qty": 5},
+        
+
+        {"name":"Medkit", "kind":"medical", "bonuses":{"health": 20}, "qty": 5},
+        {"name":"Medical Supplies", "kind":"medical", "bonuses":{"health": 25, "injured": -1}, "qty": 3},
+        {"name":"Bandages", "kind":"medical", "bonuses":{"health": 10}, "qty": null},
+        
+
+        {"name":"Camo Paint", "kind":"misc", "bonuses":{"stealth": 3}, "qty": null},
+        {"name":"Night Vision", "kind":"misc", "bonuses":{"stealth": 1, "intel": 2}, "qty": 1},
+        {"name":"Rope", "kind":"misc", "bonuses":{"speed": 1}, "qty": null},
+        {"name":"Fishing Gear", "kind":"misc", "bonuses":{"intel": 1}, "qty": 1}
+    ]

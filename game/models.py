@@ -1,5 +1,6 @@
 import random
 from typing import Literal, Optional, Union, Any 
+from .utils import format_tribute_list
 
 class Item:
     """Represents an object in the game (Weapon, Food, Utility)."""
@@ -22,6 +23,13 @@ class Item:
     @staticmethod
     def from_dict(data) -> "Item":
         return Item(data['name'], data['kind'], data.get('bonuses'))
+
+    def is_critical(self, member: "Tribute") -> bool:
+        """Determines if an item is critical for the member based on status."""
+        if member.injured and self.bonuses.get('injured', 0) < 0: return True
+        if member.poisoned and self.bonuses.get('poisoned', 0) < 0: return True
+        if member.health < 40 and self.bonuses.get('health', 0) > 0: return True
+        return False
 
 
 class Tribute:
@@ -62,24 +70,24 @@ class Tribute:
         
         # The specific items they are good with (e.g. "Bow")
         self.proficient_items = proficient_items if proficient_items else []
+    
+    @property
+    def pronouns(self):
+        """Returns a dict of pronouns based on gender."""
+        if self.gender == 'M':
+            return {'subj': 'he', 'obj': 'him', 'pos': 'his'}
+        if self.gender == 'F':
+            return {'subj': 'she', 'obj': 'her', 'pos': 'her'}
+        return {'subj': 'they', 'obj': 'them', 'pos': 'their'}
 
     @property
-    def he_she(self) -> Literal['he'] | Literal['she'] | Literal['they']:
-        if self.gender == 'M': return "he"
-        if self.gender == 'F': return "she"
-        return "they"
-
+    def he_she(self): return self.pronouns['subj']
+    
     @property
-    def him_her(self) -> Literal['him'] | Literal['her'] | Literal['them']:
-        if self.gender == 'M': return "him"
-        if self.gender == 'F': return "her"
-        return "them"
-
+    def him_her(self): return self.pronouns['obj']
+    
     @property
-    def his_her(self) -> Literal['his'] | Literal['her'] | Literal['their']:
-        if self.gender == 'M': return "his"
-        if self.gender == 'F': return "her"
-        return "their"
+    def his_her(self): return self.pronouns['pos']
 
     def get_effective_stat(self, stat_name: str)-> float:
         """
@@ -155,25 +163,6 @@ class Tribute:
             t.inventory = [Item.from_dict(i) for i in data['inventory']]
             
         return t
-    
-def format_tribute_list(tributes: list[Tribute]) -> str:
-    """
-    Turns a list of Tribute objects into a readable string.
-    ['Katniss'] -> "Katniss"
-    ['Katniss', 'Peeta'] -> "Katniss and Peeta"
-    ['Katniss', 'Peeta', 'Cato'] -> "Katniss, Peeta and Cato"
-    """
-    if not tributes:
-        return "nobody"
-    
-    names = [t.name for t in tributes]
-    
-    if len(names) == 1:
-        return names[0]
-    
-    # Join all except the last with commas, then add " and " + the last one
-    return ", ".join(names[:-1]) + f" and {names[-1]}"
-
 
 class Alliance:
     """Manages groups of Tributes working together."""

@@ -63,7 +63,8 @@ def run_test_sim():
         # Strings (Will be resolved by Engine)
         "Trident", "Bow", "Axe", "Spear", "Mace", "Sickle", 
         "Boomerang", "Sais", "Night Vision", "Clean Water", 
-        "Explosive", "Land Mine"
+        "Explosive", "Land Mine" "Medical Supplies", "Medical Supplies", 
+        "Medical Supplies", "Medical Supplies", "Medical Supplies", "Medical Supplies"
     ]
 
     infinite_loot = [
@@ -97,18 +98,55 @@ def run_test_sim():
         
         # A. EVENTS
         for event in day['events']:
+            # Extended Icon Map for new Event Types
             icon_map = {
-                'combat': "⚔️  ", 'gamemaker': "📢 ", 'scavenge': "🎒 ",
-                'social': "🤝 ", 'death': "💀 ", 'crafting': "🔨 ", 'sponsor': "🎁 "
+                # Core
+                'combat': "⚔️ ", 
+                'death': "💀 ", 
+                'gamemaker': "📢 ", 
+                'idle': "⏳ ",
+                
+                # Actions
+                'scavenge': "🎒 ", 
+                'crafting': "🔨 ", 
+                'training': "🎯 ",
+                'stealth': "🥷 ",
+                'intel': "🧠 ",
+                
+                # Interactions
+                'social': "💬 ", 
+                'trade': "⚖️ ",
+                'romance': "❤️ ",
+                'betrayal': "🔪 ",
+                'conflict': "😠 ",
+                'funny': "😆 ",
+                'sad': "😢 ",
+                
+                # Health/Status
+                'medical': "💊 ", 
+                'accident': "🤕 ",
+                'mental': "😵‍💫 ",
+                'sponsor': "🎁 ",
+                
+                # Environment
+                'forest': "🌲 ", 
+                'water': "💧 ", 
+                'weather': "⛈️ ",
+                'pve': "🐺 ",
+                'dangerous': "⚠️ "
             }
+            
+            # Default to "🌲" if the tag isn't found
             icon = icon_map.get(event['type'], "🌲 ")
+            
+            # Print the event line
             print(f"  {icon} {event['text']}")
         
         # B. DEATHS
         if day['deaths_today']:
             print(f"  💀 DEAD: {', '.join(day['deaths_today'])}")
 
-        # C. ALLIANCE BREAKDOWN (NEW)
+        # C. ALLIANCE BREAKDOWN
         if "alliance_snapshot" in day:
             print(f"  📊 STATUS REPORT:")
             for idx, group in enumerate(day["alliance_snapshot"]):

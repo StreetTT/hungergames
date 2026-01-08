@@ -1,6 +1,7 @@
 import random
 from typing import Any
-from .models import Tribute, Terrain, Alliance, format_tribute_list
+from .models import Tribute, Terrain, Alliance
+from .utils import format_tribute_list
 
 class CombatResolver:
     """
