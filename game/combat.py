@@ -10,7 +10,7 @@ class CombatResolver:
     def __init__(self) -> None:
         pass
 
-    def resolve_fight(self, attacker_alliance: Alliance, defender_alliance: Alliance, terrain: Terrain, game_engine: Any = None) -> str:
+    def resolve_fight(self, attacker_alliance: Alliance, defender_alliance: Alliance, terrain: Terrain, game_engine: Any = None, lethality_scale: float = 1.0) -> str:
         """
         Main entry point.
         Calculates outcome based on members AND shared inventory of the alliances.
@@ -55,11 +55,10 @@ class CombatResolver:
         margin = att_score - def_score
         
         if margin > 0:
-            outcome = self._apply_outcome(winners=attacker_alliance, losers=defender_alliance, margin=margin)
+            outcome = self._apply_outcome(winners=attacker_alliance, losers=defender_alliance, margin=margin, lethality_scale=lethality_scale)
             log_parts.append(outcome)
         elif margin < 0:
-            # Note: Defenders win implies they successfully repelled the attack
-            outcome = self._apply_outcome(winners=defender_alliance, losers=attacker_alliance, margin=abs(margin))
+            outcome = self._apply_outcome(winners=defender_alliance, losers=attacker_alliance, margin=abs(margin), lethality_scale=lethality_scale)
             log_parts.append(outcome)
         else:
             log_parts.append("the two groups clash, but neither side gains the upper hand")
@@ -120,7 +119,7 @@ class CombatResolver:
 
         return total_power
 
-    def _apply_outcome(self, winners: Alliance, losers: Alliance, margin: float) -> str:
+    def _apply_outcome(self, winners: Alliance, losers: Alliance, margin: float, lethality_scale: float = 1.0) -> str:
         """
         Determines who gets hurt/killed based on the victory margin.
         Can result in multiple deaths.
@@ -141,16 +140,20 @@ class CombatResolver:
         injured = []
         
         # Base damage that everyone on losing side takes
-        base_damage = 10 + (margin * 0.5)
+        base_damage = (10 + (margin * 0.5)) * lethality_scale
         
-        # Loop through a copy of losers
         for victim in list(losers.members):
-            # Variance: Some take more damage than others
             personal_dmg = base_damage + random.randint(0, 15)
             victim.change_health(-personal_dmg)
             
-            # Execution Chance (Aggressive winners finish off weak losers)
-            if victim.alive and killer.stats['aggression'] > 7 and margin > 20 and random.random() < 0.4:
+            # 5. BOOST EXECUTION CHANCE
+            # We lower the requirements for an instant kill based on the scale
+            # If scale is 2.0, aggression needed drops to 3.5, margin needed drops to 10
+            exec_aggro_req = 7.0 / lethality_scale
+            exec_margin_req = 20.0 / lethality_scale
+            exec_chance = 0.4 * lethality_scale # Doubles the probability
+
+            if victim.alive and killer.stats['aggression'] > exec_aggro_req and margin > exec_margin_req and random.random() < exec_chance:
                 victim.change_health(-999)
             
             if not victim.alive:

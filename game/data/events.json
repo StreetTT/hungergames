@@ -710,5 +710,164 @@
         "requires_item": "Clean Water",
         "lose_items": ["Clean Water"],
         "effects": { "health": 10 }
+    },
+    {
+        "id": "fishing_success",
+        "text": "{t1} uses {his1} fishing gear to catch a bounty of river fish.",
+        "tags": ["water", "scavenge"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 10,
+        "requires_item": "Fishing Gear",
+        "gain_items": ["Fresh Food", "Fresh Food"],
+        "effects": { "health": 5 }
+    },
+    {
+        "id": "rope_climb_treasure",
+        "text": "{t1} uses a rope to descend a steep cliff face and finds a hidden cache.",
+        "tags": ["scavenge", "forest"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "requires_item": "Rope",
+        "gain_items": ["Medkit"],
+        "effects": { "intel": 1 }
+    },
+    {
+        "id": "acid_rain",
+        "text": "Acidic rain begins to fall! {t1} is burned before finding cover.",
+        "tags": ["weather", "dangerous", "gamemaker"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 4,
+        "effects": { "health": -15 }
+    },
+    {
+        "id": "lizard_mutt_attack",
+        "text": "A lizard mutt leaps out of the shadows and bites {t1}!",
+        "tags": ["pve", "combat", "dangerous"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -10, "poisoned": 1 }
+    },
+    {
+        "id": "monkey_theft",
+        "text": "A troop of monkeys harasses {t1} and steals some of {his1} supplies!",
+        "tags": ["pve", "accident", "forest"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "lose_items": ["Fresh Food"],
+        "effects": { "health": -2 }
+    },
+    {
+        "id": "awkward_romance",
+        "text": "{t1} and {t2} accidentally brush hands and awkwardly look away.",
+        "tags": ["social", "romance", "funny"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 6,
+        "effects": { "health": 2 }
+    },
+    {
+        "id": "star_gazing_romance",
+        "text": "{t1} and {t2} sit close together, watching the stars in silence.",
+        "tags": ["social", "romance", "night"],
+        "tributes_needed": 2,
+        "min_size": 2,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": 5, "intel": 1 }
+    },
+    {
+        "id": "craft_spear_wood",
+        "text": "{t1} fashions a sharp spear from a fallen branch.",
+        "tags": ["crafting", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "gain_items": ["Wooden Spear"],
+        "effects": { "intel": 1 }
+    },
+    {
+        "id": "hypothermia",
+        "text": "{t1} shakes uncontrollably as hypothermia sets in.",
+        "tags": ["weather", "cold", "night"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "health": -15, "speed": -1 }
+    },
+    {
+        "id": "lightning_strike",
+        "text": "A massive bolt of lightning strikes {t1}! {He1} is instantly incinerated.",
+        "tags": ["weather", "death", "dangerous"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 1,
+        "kills": [0]
+    },
+    {
+        "id": "hallucinate_home",
+        "text": "{t1} starts talking to people who aren't there, their mind cracking under the pressure.",
+        "tags": ["mental", "idle"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 5,
+        "effects": { "intel": -3 }
+    },
+    {
+        "id": "plant_landmine_trap",
+        "text": "{t1} carefully plants a Land Mine in a high-traffic area.",
+        "tags": ["combat", "trap"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 4,
+        "requires_item": "Land Mine",
+        "lose_items": ["Land Mine"],
+        "effects": { "intel": 3, "aggression": 1 }
+    },
+    {
+        "id": "sponsor_matches",
+        "text": "A parachute drops a small box of matches for {t1}.",
+        "tags": ["sponsor"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 6,
+        "gain_items": ["Molotov"],
+        "effects": { "health": 2 }
+    },
+    {
+        "id": "build_shack",
+        "text": "{t1} builds a small shack out of branches and mud to stay warm.",
+        "tags": ["crafting", "camp"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 8,
+        "effects": { "defense": 2, "health": 2 }
+    },
+    {
+        "id": "trip_trap_injury",
+        "text": "{t1} steps into a bear trap! {He1} manages to pry it open, but {his1} leg is mangled.",
+        "tags": ["accident", "trap"],
+        "tributes_needed": 1,
+        "min_size": 1,
+        "max_size": 6,
+        "weight": 3,
+        "effects": { "health": -25, "injured": 1, "speed": -2 }
     }
 ]
