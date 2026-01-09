@@ -1,6 +1,6 @@
 import random
 from typing import Literal, Optional, Union, Any 
-from .utils import format_tribute_list
+from .utils import _get_random_items_from_db
 
 class Item:
     """Represents an object in the game (Weapon, Food, Utility)."""
@@ -120,10 +120,9 @@ class Tribute:
             if stat_name in item.bonuses:
                 val += item.bonuses[stat_name]
             
-            # Proficiency Bonus: If using their signature weapon
-            # We assume a weapon boosts 'strength' or 'defense' effectively
-            if item.name in self.proficient_items and stat_name in ["strength", "defense"]:
-                val *= 1.5  # 50% Boost
+            # Proficiency Bonus: Applies to any stat the item enhances
+            if item.name in self.proficient_items and stat_name in item.bonuses and item.bonuses[stat_name] > 0:
+                val *= 1.5 # 50% boost for proficiency
 
         return round(val, 2)
 
@@ -219,22 +218,32 @@ class Terrain:
     def __init__(self, 
                  name: str, 
                  tag_multipliers: Optional[dict[str,float]]=None,
-                 finite_items: list[Item]=[],
-                 infinite_items: list[Item]=[]) -> None:
+                 finite_items: Optional[list[Item]]=None,
+                 infinite_items: Optional[list[Item]]=None) -> None:
         self.name = name
         
         # Example: {"water": 2.0, "desert": 0.0}
-        self.tag_multipliers = tag_multipliers if tag_multipliers else {}
-
         self.tag_multipliers = {}
         if tag_multipliers:
             for tag, val in tag_multipliers.items():
                 # Prevent negative multipliers or crazy high values (e.g., 100x)
                 self.tag_multipliers[tag] = max(MIN_MULT, min(MAX_MULT, val))
         
-        # Can be list of Item objects OR list of strings (names)
-        self.finite_items = finite_items if finite_items is not None else []
-        self.infinite_items = infinite_items if infinite_items is not None else []
+        # If no finite items provided, pick random subset from DB
+        if finite_items is not None and len(finite_items) > 0:
+            self.finite_items = finite_items
+        else:
+            # Select 5 to 20 random items
+            rng_count = random.randint(5, 20)
+            self.finite_items = _get_random_items_from_db(rng_count)
+
+        # If no infinite items provided, pick random subset from DB
+        if infinite_items is not None and len(infinite_items) > 0:
+            self.infinite_items = infinite_items
+        else:
+             # Select 2 to 15 random items (make them scarcer than finite pool usually)
+            rng_count = random.randint(2, 15)
+            self.infinite_items = _get_random_items_from_db(rng_count)
 
     def get_multiplier(self, tags) -> float:
         """

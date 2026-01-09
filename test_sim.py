@@ -11,6 +11,7 @@ from game.models import Tribute, Terrain, Item
 def run_test_sim():
 
     seed = 42 # Fixed seed for reproducibility
+    random.seed(seed)
     # ==========================================
     # 1. SETUP ROSTER (24 TRIBUTES)
     # ==========================================
@@ -74,8 +75,8 @@ def run_test_sim():
     terrain = Terrain(
         name="Mixed Input Arena",
         tag_multipliers={"forest": 1.2, "water": 1.5, "scavenge": 1.0, "combat": 1.1},
-        finite_items=finite_loot,
-        infinite_items=infinite_loot
+        finite_items=[],
+        infinite_items=[]
     )
 
     # ==========================================

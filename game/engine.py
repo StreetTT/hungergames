@@ -196,6 +196,8 @@ class GameEngine:
         survivors = self.get_alive_tributes()
         if len(survivors) >= 1: self.game_log["meta"]["winner"] = survivors[0].name
         else: self.game_log["meta"]["winner"] = "Nobody"
+        self.game_log["total_days"] = self.day
+        
         return self.game_log
 
     def _perform_self_care(self) -> None:

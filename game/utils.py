@@ -1,4 +1,8 @@
+import random 
+import os 
+import json
 from typing import TYPE_CHECKING, Optional
+
 
 if TYPE_CHECKING:
     from .models import Tribute, Item
@@ -61,3 +65,34 @@ def get_tradable_item(member: "Tribute") -> Optional["Item"]:
         and (not item.is_critical(member) or (item.is_critical(member) and firstCritItemFound)):
              return item
     return None
+
+_CACHED_ITEM_DATA = None
+
+def _get_random_items_from_db(count: int) -> list["Item"]:
+    """Helper to fetch random items from the JSON database."""
+    from .models import Item
+    global _CACHED_ITEM_DATA
+    
+    # 1. Load Data if needed
+    if _CACHED_ITEM_DATA is None:
+        try:
+            # Construct path relative to this file
+            path = os.path.join(os.path.dirname(__file__), 'data', 'items.json')
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    _CACHED_ITEM_DATA = json.load(f)
+            else:
+                _CACHED_ITEM_DATA = []
+        except Exception as e:
+            print(f"Error loading items.json: {e}")
+            _CACHED_ITEM_DATA = []
+
+    if not _CACHED_ITEM_DATA:
+        return []
+
+    # 2. Select Random Entries
+    # Sample ensures uniqueness within the selection
+    k = min(count, len(_CACHED_ITEM_DATA))
+    selected_data = random.sample(_CACHED_ITEM_DATA, k)
+    
+    return [Item.from_dict(d) for d in selected_data]
