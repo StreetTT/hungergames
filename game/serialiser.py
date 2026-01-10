@@ -36,7 +36,7 @@ def create_replay_package(tributes: list[Tribute], terrain: Terrain, rng_seed: s
     game_id = str(uuid.uuid4())[:8]  # Short unique ID, e.g., "a1b2c3d4"
     
     package = {
-        "meta": { "version": "1.1.1", "game_id": game_id, "seed": rng_seed },
+        "meta": { "version": "1.0.alpha", "game_id": game_id, "seed": rng_seed },
         "terrain": terrain.to_dict(),
         "tributes": [t.to_dict() for t in tributes]
     }

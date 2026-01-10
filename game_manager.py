@@ -3,12 +3,13 @@ import os
 import random
 import json
 import datetime
+from collections import Counter
 
 # Ensure we can import the game module
 sys.path.append(os.getcwd())
 
 from game.engine import GameEngine
-from game.models import Tribute, Terrain
+from game.models import Tribute, Terrain, Item
 import game.serialiser as serialiser
 
 class GameManager:
@@ -17,6 +18,18 @@ class GameManager:
         self.terrain = None
         self.seed = None
         self.last_result = None
+        self.engine = None 
+
+    # --- FORMATTING HELPER ---
+    @staticmethod
+    def _fmt_cell(text, width):
+        """Standardizes cell width with middle truncation."""
+        s = str(text)
+        if len(s) <= width: 
+            return f"{s:<{width}}"
+        # Middle Truncate
+        head = (width - 3) // 2
+        tail = (width - 3) - head
 
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -131,13 +144,27 @@ class GameManager:
         while True:
             self.clear_screen()
             print(f"👥 EDITING ROSTER ({len(self.roster)} Tributes)")
-            print(f"{'#':<3} | {'Name':<15} | {'Dist':<4} | {'Str':<3} | {'Int':<3} | {'Spd':<3} | {'Agg':<3} | {'Stl':<3} | {'Def':<3}")
-            print("-" * 60)
+            
+            # Define Widths
+            w_id, w_name, w_dist = 3, 20, 4
+            w_stat = 3
+            
+            header = (
+                f"{self._fmt_cell('#', w_id)} | {self._fmt_cell('Name', w_name)} | {self._fmt_cell('Dist', w_dist)} | "
+                f"{self._fmt_cell('Str', w_stat)} | {self._fmt_cell('Int', w_stat)} | {self._fmt_cell('Spd', w_stat)} | {self._fmt_cell('Agg', w_stat)} | {self._fmt_cell('Stl', w_stat)} | {self._fmt_cell('Def', w_stat)} |"
+            )
+            print(header)
+            print("-" * len(header))
             
             for idx, t in enumerate(self.roster):
-                print(f"{idx+1:<3} | {t.name:<15} | {t.district:<4} | {t.stats['strength']:<3} | {t.stats['intel']:<3} | {t.stats['speed']:<3} | {t.stats['aggression']:<3} | {t.stats['stealth']:<3} | {t.stats['defense']:<3}")
+                line = (
+                    f"{self._fmt_cell(idx+1, w_id)} | {self._fmt_cell(t.name, w_name)} | {self._fmt_cell(t.district, w_dist)} | "
+                    f"{self._fmt_cell(t.stats['strength'], w_stat)} | {self._fmt_cell(t.stats['intel'], w_stat)} | {self._fmt_cell(t.stats['speed'], w_stat)} | "
+                    f"{self._fmt_cell(t.stats['aggression'], w_stat)} | {self._fmt_cell(t.stats['stealth'], w_stat)} | {self._fmt_cell(t.stats['defense'], w_stat)} |"
+                )
+                print(line)
             
-            print("-" * 60)
+            print("-" * len(header))
             print("Enter ID to edit, 'A' to Add, 'D [ID]' to Delete, or 'B' to Back")
             cmd = input("Command: ").strip().upper()
             
@@ -262,9 +289,12 @@ class GameManager:
         while True:
             self.clear_screen()
             print(f"🌍 EDITING TERRAIN: {self.terrain.name}")
-            print("-" * 40)
-            print(f"{'Tag':<15} | {'Multiplier':<5}")
-            print("-" * 40)
+            
+            w_tag, w_mult = 20, 10
+            header = f"{self._fmt_cell('Tag', w_tag)} | {self._fmt_cell('Multiplier', w_mult)}"
+            print("-" * len(header))
+            print(header)
+            print("-" * len(header))
             
             # Show standard tags + any custom ones
             tags = set(["forest", "water", "combat", "scavenge", "cold", "fire", "night"])
@@ -272,9 +302,9 @@ class GameManager:
             
             for tag in sorted(list(tags)):
                 val = self.terrain.tag_multipliers.get(tag, 1.0)
-                print(f"{tag:<15} | {val:<5}")
+                print(f"{self._fmt_cell(tag, w_tag)} | {self._fmt_cell(val, w_mult)}")
             
-            print("-" * 40)
+            print("-" * len(header))
             print("1. Rename Arena")
             print("2. Edit Multiplier")
             print("3. Clear Item Pools (Force Re-roll on sim)")
@@ -357,13 +387,18 @@ class GameManager:
         print(f"\n🚀 STARTING SIMULATION [Seed: {self.seed}]...")
         
         # Re-initialize terrain if it relies on random generation to ensure seed applies
-        if not self.terrain.finite_items and not self.terrain.infinite_items:
-             # Re-trigger init logic by re-creating it or letting engine handle it
-             # For safety, we trust the Engine to fill empty lists if needed
-             pass
+        sim_terrain = Terrain(
+            self.terrain.name, 
+            self.terrain.tag_multipliers, 
+            finite_items=[],   
+            infinite_items=[]  
+        )
 
-        engine = GameEngine(self.roster, self.terrain, rng_seed=self.seed)
-        self.last_result = engine.simulate()
+        # Clone Roster to avoid modifying the master list in menu
+        sim_roster = [Tribute.from_dict(t.to_dict()) for t in self.roster]
+
+        self.engine = GameEngine(sim_roster, sim_terrain, rng_seed=self.seed)
+        self.last_result = self.engine.simulate()
         
         print(f"\n🏆 WINNER: {self.last_result['meta']['winner']}")
         
@@ -382,9 +417,18 @@ class GameManager:
             elif c == '4': break
 
     def view_summary(self):
-        if not self.last_result: return
-        print(f"Total Days: {self.last_result.get('total_days', 'N/A')}")
-        print(f"Winner: {self.last_result['meta']['winner']}")
+        if not self.last_result or not self.engine: return
+        
+        winner_name = self.last_result['meta']['winner']
+        winner_obj = next((t for t in self.engine.tributes if t.name == winner_name), None)
+        
+        print("\n--- 🏆 GAME SUMMARY ---")
+        print(f"Winner:      {winner_name}")
+        if winner_obj:
+            print(f"Kills:       {len(winner_obj.kills)}")
+            inv_str = ", ".join([i.name for i in winner_obj.inventory]) if winner_obj.inventory else "None"
+            print(f"End Items:   {inv_str}")
+        print(f"Duration:    {self.last_result.get('total_days', 'N/A')} Days")
         input("...")
 
     def save_replay(self):
@@ -432,8 +476,12 @@ class GameManager:
         os.makedirs("reports", exist_ok=True)
         
         with open(filename, "w", encoding="utf-8") as f:
+            # 1. HEADER
             f.write(f"GAME REPORT | Seed: {self.seed} | Winner: {self.last_result['meta']['winner']}\n")
             f.write("="*60 + "\n\n")
+            
+            # 2. DAY BY DAY
+            f.write("--- 📜 DAY BY DAY LOG ---\n")
             
             icon_map = {
                 # --- CORE & STATUS ---
@@ -489,6 +537,56 @@ class GameManager:
                     
                 if day['deaths_today']:
                     f.write(f"  💀 DEAD: {', '.join(day['deaths_today'])}\n")
+                
+                # Alliance Breakdown (No HP)
+                if "alliance_snapshot" in day:
+                    f.write(f"  📊 ALLIANCE STATUS:\n")
+                    for idx, group in enumerate(day["alliance_snapshot"]):
+                        members_str = [f"{m['name']} {([{', '.join(m['inventory'])}]) if m['inventory'] else ''}" for m in group["members"]]
+                        # We specifically DO NOT show health here as requested
+                        shared_str = f" | Shared: {', '.join(group['shared_inventory'])}" if group['shared_inventory'] else ""
+                        f.write(f"    Group {idx+1}: {', '.join(members_str)}{shared_str}\n")
+
+            # 3. BREAKDOWN SECTION
+            f.write("\n" + "="*60 + "\n")
+            f.write("📊 GAME BREAKDOWN\n")
+            f.write("="*60 + "\n")
+
+            # Kill Log
+            f.write("\n--- 🔪 KILL LOG ---\n")
+            has_kills = False
+            for t in self.engine.tributes:
+                if t.kills:
+                    has_kills = True
+                    f.write(f"{self._fmt_cell(t.name, 25)} killed: {', '.join(t.kills)}\n")
+            if not has_kills: f.write("No kills recorded.\n")
+
+            # Alliance History (Filtered from Events)
+            f.write("\n--- 🤝 ALLIANCE HISTORY ---\n")
+            social_events = ["Form Alliance", "Disband", "Betrayal", "Defection"]
+            for day in self.last_result['timeline']:
+                for e in day['events']:
+                    # We check if the event ID (e.g., 'Form Alliance') matches our interest
+                    if e.get('id') in social_events or e.get('type') == 'betrayal':
+                        f.write(f"Day {day['day_number']}: {e['text']}\n")
+
+            # Event Frequency
+            tag_counts = Counter()
+            id_counts = Counter()
+            
+            for day in self.last_result['timeline']:
+                for e in day['events']:
+                    tag_counts[e.get('type', 'misc')] += 1
+                    eid = e.get('id')
+                    if eid: id_counts[eid] += 1
+            
+            f.write("\n--- 🏷️ EVENT FREQUENCY (Tags) ---\n")
+            for tag, count in tag_counts.most_common():
+                f.write(f"{self._fmt_cell(tag, 25)} : {count}\n")
+
+            f.write("\n--- 🌍 EVENT FREQUENCY (IDs) ---\n")
+            for eid, count in id_counts.most_common():
+                f.write(f"{self._fmt_cell(eid, 35)} : {count}\n")
 
         print(f"✅ Report written to {filename}")
         input("...")

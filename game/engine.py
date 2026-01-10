@@ -188,7 +188,7 @@ class GameEngine:
             self.run_day()
             
             # Safety break for infinite loops
-            if self.day > 50:
+            if self.day > 59:
                 self._resolve_sudden_death()
                 break
 

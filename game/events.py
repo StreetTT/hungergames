@@ -483,6 +483,8 @@ class FormAllianceEvent(ComplexEvent):
         
         # Merge Members
         new_members = list(set(alliance.members + friend_alliance.members))
+        new_members.sort(key=lambda t: t.name)
+        
         new_alliance = Alliance(new_members)
         
         # 5. Merge Shared Inventory
