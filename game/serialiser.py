@@ -42,6 +42,39 @@ def load_replay_package(game_id: str) -> Optional[dict[str,Any]]:
     return load_json(os.path.join(SAVES_DIR, f"{game_id}.json"))
 
 # endRegion
+# region Simulation Result
+
+def save_simulation_result(game_id, full_package):
+    """
+    Saves the full game package to the SAVES_DIR.
+    """
+    save_path = os.path.join(SAVES_DIR, f"{game_id}.json")
+    
+    try:
+        with open(save_path, 'w') as f:
+            json.dump(full_package, f, indent=4)
+        return True
+    except IOError as e:
+        print(f"Error saving game {game_id}: {e}")
+        return False
+
+def load_simulation_result(game_id):
+    """
+    Loads a game package from SAVES_DIR.
+    Returns None if file not found.
+    """
+    path = os.path.join(SAVES_DIR, f"{game_id}.json")
+    
+    if not os.path.exists(path):
+        return None
+        
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except IOError:
+        return None
+
+# endRegion
 # region Tributes
 
 def save_tributes_preset(tributes: list[Tribute], name: str) -> str:
