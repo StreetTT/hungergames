@@ -3,17 +3,7 @@ import os
 import uuid
 from .models import Tribute, Terrain
 from typing import Optional, Union, Any 
-
-# Directory configuration
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SAVES_DIR = os.path.join(BASE_DIR, 'saves')
-TRIBUTES_DIR = os.path.join(BASE_DIR, 'tributes')
-TERRAINS_DIR = os.path.join(BASE_DIR, 'terrains')
-
-# Ensure directories exist
-os.makedirs(SAVES_DIR, exist_ok=True)
-os.makedirs(TRIBUTES_DIR, exist_ok=True)
-os.makedirs(TERRAINS_DIR, exist_ok=True)
+from config import SAVES_DIR, TERRAINS_DIR, TRIBUTES_DIR
 
 def save_json(filepath: str, data: dict):
     """Generic JSON saver to reduce open() repetition."""
