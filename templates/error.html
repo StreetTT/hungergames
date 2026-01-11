@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ code }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+    <h1 style="font-size: 5rem; color: var(--accent);">{{ code }}</h1>
+    <h2>Oops! Something went wrong.</h2>
+    <p style="margin: 1rem 0; color: var(--text-secondary);">
+        {{ error.description if error.description else error }}
+    </p>
+    <a href="/" class="btn btn-primary">Return to District 12 (Home)</a>
+</div>
+{% endblock %}

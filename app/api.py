@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from game.engine import GameEngine
 from game.models import Tribute, Terrain
 import game.serialiser as serialiser
-from utils import *
+from .utils import *
 
 api_bp = Blueprint('api', __name__)
 
@@ -45,16 +45,16 @@ def fetch_object_files(type: str, filename: Optional[str]=None):
     except Exception as e: raise e
     return presets
 
-@api_bp.route('/rosters/<filename>', method=["GET", "POST", "PATCH"])
+@api_bp.route('/rosters/<filename>', methods=["GET", "POST", "PATCH"])
 def rosters(filename: str):
     if not filename:
-        if request.method is "GET": # Fetch all rosters
+        if request.method == "GET": # Fetch all rosters
             try:
                 presets = fetch_object_files('tributes')
             except Exception as e:
                 return error_response(f"Error listing rosters: {str(e)}", 500)
             return success_response(presets, "Roster presets retrieved")
-        elif request.method is "POST": # Create new roster
+        elif request.method == "POST": # Create new roster
             return error_response("Route not Implemented.", 501)
         
     elif filename:
@@ -63,27 +63,27 @@ def rosters(filename: str):
         if not filename:
             return error_response("Invalid filename provided.", 400)
         
-        if request.method is "GET": # Fetch 1 roster
+        if request.method == "GET": # Fetch 1 roster
             try:
                 data = fetch_object_files('rosters', filename)
             except Exception as e:
                 return error_response(f"Error loading roster: {str(e)}", 500)
             return success_response(data, "Roster loaded")
-        elif request.method is "PATCH": # Update existing roster
+        elif request.method == "PATCH": # Update existing roster
             return error_response("Route not Implemented.", 501)
     
     return error_response("Route not allowed.", 405)
 
-@api_bp.route('/terrains/<filename>', method=["GET", "POST", "PATCH"])
+@api_bp.route('/terrains/<filename>', methods=["GET", "POST", "PATCH"])
 def terrains(filename: str):
     if not filename:
-        if request.method is "GET": # Fetch all terrains
+        if request.method == "GET": # Fetch all terrains
             try:
                 presets = fetch_object_files('terrains')
             except Exception as e:
                 return error_response(f"Error listing terrains: {str(e)}", 500)
             return success_response(presets, "Terrain presets retrieved")
-        elif request.method is "POST": # Create new terrain
+        elif request.method == "POST": # Create new terrain
             return error_response("Route not Implemented.", 501)
     
     elif filename:
@@ -92,13 +92,13 @@ def terrains(filename: str):
         if not filename:
             return error_response("Invalid filename provided.", 400)
         
-        if request.method is "GET": # Fetch 1 terrain
+        if request.method == "GET": # Fetch 1 terrain
             try:
                 data = fetch_object_files('terrains', filename)
             except Exception as e:
                 return error_response(f"Error loading terrain: {str(e)}", 500)
             return success_response(data, "Terrain loaded")
-        elif request.method is "PATCH": # Update existing roster
+        elif request.method == "PATCH": # Update existing roster
             return error_response("Route not Implemented.", 501)
     
     return error_response("Route not allowed.", 405)

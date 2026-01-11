@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Hunger Games{% endblock %}
+
+{% block sidebar %}
+    <h3>Presets</h3>
+    <hr style="border-color: var(--border-color); margin: 1rem 0;">
+    
+    <div class="card" style="padding: 1rem;">
+        <h4>74th Hunger Games</h4>
+        <p>Made by Suzanne Collins</p>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <h1 class="text-accent">Create New Arena</h1>
+    <p>Configure the tributes and terrain for the simulation.</p>
+    <br>
+
+    <form id="setupForm">
+        
+        <div class="card">
+            <h2>👥 Tributes</h2>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="rosterPreset" class="btn" style="border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                    <option value="" disabled selected>Load Roster Preset...</option>
+                    </select>
+                <button type="button" id="loadRosterBtn" class="btn">Load</button>
+                <button type="button" id="saveRosterBtn" class="btn">Save</button>
+            </div>
+            
+            <div id="tributeList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px;">
+                
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🌍 Terrain</h2>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="terrainPreset" class="btn" style="border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                    <option value="" disabled selected>Load Terrain Preset...</option>
+                    </select>
+                <button type="button" id="loadTerrainBtn" class="btn">Load</button>
+                <button type="button" id="saveTerrainBtn" class="btn">Save</button>
+            </div>
+            
+            <div id="terrainList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px;">
+                
+            </div>
+        </div>
+
+
+        <div style="text-align: right;">
+            <button type="submit" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 3rem;">
+                🚀 START SIMULATION
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/setup.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Post Game Report{% endblock %}
+
+{% block sidebar %}
+    <h3>Actions</h3>
+    <a href="/" class="btn" style="display: block; text-align: center; margin-bottom: 1rem;">🏠 New Game</a>
+    <button class="btn" onclick="window.print()" style="width: 100%;">🖨️ Print Report</button>
+{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 3rem;">
+    <h1 class="text-accent">Simulation Complete</h1>
+    <p>Game ID: {{ game_id }}</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+    
+    <div class="card" style="border: 2px solid var(--accent); text-align: center;">
+        <h2>🏆 The Victor</h2>
+        <div id="winnerAvatar" style="font-size: 4rem; margin: 1rem 0;">👤</div>
+        <h3 id="winnerName" class="text-accent">Loading...</h3>
+        <p id="winnerDistrict">District --</p>
+    </div>
+
+    <div class="card">
+        <h3>📊 Summary</h3>
+        <ul style="list-style: none; margin-top: 1rem; line-height: 2;">
+            <li><strong>Total Days:</strong> <span id="totalDays">--</span></li>
+            <li><strong>Total Kills:</strong> <span id="totalKills">--</span></li>
+            <li><strong>Deadliest Tribute:</strong> <span id="deadliestTribute">--</span></li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>💀 Fallen Tributes</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                <th style="padding: 10px;">Day</th>
+                <th style="padding: 10px;">Tribute</th>
+                <th style="padding: 10px;">Cause</th>
+            </tr>
+        </thead>
+        <tbody id="killLogBody">
+            </tbody>
+    </table>
+</div>
+
+<script>const GAME_ID = "{{ game_id }}";</script>
+<script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+{% endblock %}

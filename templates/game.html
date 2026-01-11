@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Simulation Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Specific styles for game elements */
+    .tribute-item {
+        padding: 0.8rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .tribute-item.dead { opacity: 0.5; filter: grayscale(1); }
+    .status-icon { font-size: 1.2rem; }
+    
+    .event-card {
+        border-left: 4px solid var(--accent);
+        margin-bottom: 1rem;
+        animation: fadeIn 0.5s ease;
+    }
+    .event-card.death { border-left-color: #ff4444; }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .controls-bar {
+        position: sticky;
+        bottom: 2rem;
+        background: var(--bg-secondary);
+        padding: 1rem;
+        border-radius: 50px;
+        box-shadow: var(--shadow);
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        border: 1px solid var(--accent);
+    }
+</style>
+{% endblock %}
+
+{% block sidebar %}
+    <h3 style="margin-bottom: 1rem;">Tributes</h3>
+    <div id="tributeSidebarList">
+        <div class="tribute-item">
+            <div style="width: 30px; height: 30px; background: #555; border-radius: 50%;"></div>
+            <div>
+                <strong>Loading...</strong>
+                <div style="font-size: 0.8em; color: var(--text-secondary);">District 12</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 id="dayTitle" class="text-accent">Loading...</h1>
+        <p id="weatherDisplay" class="text-secondary">--</p>
+    </div>
+
+    <div id="gameFeed">
+        </div>
+
+    <div class="controls-bar">
+        <button id="prevDayBtn" class="btn">⬅️ Previous</button>
+        <span id="dayIndicator" style="align-self: center; font-weight: bold;">Day 0</span>
+        <button id="nextDayBtn" class="btn btn-primary">Next Day ➡️</button>
+        <a href="/stats/{{ game_id }}" id="finishBtn" class="btn hidden">View Stats 📊</a>
+    </div>
+
+</div>
+
+<script>const GAME_ID = "{{ game_id }}";</script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,141 @@
+/* static/css/main.css */
+
+:root {
+    /* Light Mode Defaults */
+    --bg-primary: #f4f4f9;
+    --bg-secondary: #ffffff;
+    --bg-panel: #e0e0e0;
+    --text-primary: #333333;
+    --text-secondary: #555555;
+    --accent: #ff8c00; /* Dark Orange */
+    --accent-hover: #e07b00;
+    --border-color: #cccccc;
+    --shadow: 0 2px 5px rgba(0,0,0,0.1);
+    
+    /* Layout */
+    --sidebar-width: 300px;
+}
+
+[data-theme="dark"] {
+    /* Dark Mode (Black & Orange) */
+    --bg-primary: #121212; /* Deep Black/Gray */
+    --bg-secondary: #1e1e1e; /* Card BG */
+    --bg-panel: #2d2d2d;
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaaaaa;
+    --accent: #ff9800; /* Bright Orange */
+    --accent-hover: #ffb74d;
+    --border-color: #333333;
+    --shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* Global Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- Layout Structure --- */
+.app-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* Prevent body scroll, scroll inside panels */
+}
+
+/* Switchable Sidebar (Default Left) */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar.right-aligned {
+    order: 2; /* CSS Flexbox magic to swap sides */
+    border-right: none;
+    border-left: 1px solid var(--border-color);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+}
+
+/* --- Header / Nav --- */
+.top-nav {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+}
+
+.brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* --- Components --- */
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: #000; /* Black text on Orange pop */
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+}
+
+/* --- Theme Toggle --- */
+.theme-switch {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* --- Utility --- */
+.text-accent { color: var(--accent); }
+.hidden { display: none; }
