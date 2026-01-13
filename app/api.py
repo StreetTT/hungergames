@@ -45,8 +45,37 @@ def fetch_object_files(type: str, filename: Optional[str]=None):
     except Exception as e: raise e
     return presets
 
-@api_bp.route('/rosters/<filename>', methods=["GET", "POST", "PATCH"])
-def rosters(filename: str):
+@api_bp.route('/config', methods=['GET'])
+def get_game_config():
+    """Returns game constants from the Models."""
+    return success_response({
+        "stats": {
+            "min": Tribute.MIN_STAT,
+            "max": Tribute.MAX_STAT
+        },
+        "multipliers": {
+            "min": Terrain.MIN_MULT,
+            "max": Terrain.MAX_MULT
+        }
+    }, "Config loaded")
+
+@api_bp.route('/items', methods=['GET'])
+def items():
+    """Returns list of valid items for tags/autocomplete."""
+    # Assuming items.json is in game/data/items.json
+    try:
+        path = join(DATA_DIR, 'items.json')
+        data = serialiser.load_json(path)
+        item_names = sorted([i['name'] for i in data]) if data else []
+        return success_response(item_names, "Items loaded")
+            
+    except Exception as e:
+        return error_response(f"Could not load items: {e}", 500)
+
+
+@api_bp.route('/roster/<filename>', methods=["GET", "POST", "PATCH"])
+@api_bp.route('/rosters', methods=["GET"])
+def rosters(filename: Optional[str]=None):
     if not filename:
         if request.method == "GET": # Fetch all rosters
             try:
@@ -74,8 +103,10 @@ def rosters(filename: str):
     
     return error_response("Route not allowed.", 405)
 
-@api_bp.route('/terrains/<filename>', methods=["GET", "POST", "PATCH"])
-def terrains(filename: str):
+
+@api_bp.route('/terrain/<filename>', methods=["GET", "POST", "PATCH"])
+@api_bp.route('/terrains', methods=["GET"])
+def terrains(filename: Optional[str]=None):
     if not filename:
         if request.method == "GET": # Fetch all terrains
             try:

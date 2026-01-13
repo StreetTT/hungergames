@@ -31,13 +31,11 @@ class Item:
         if member.health < 40 and self.bonuses.get('health', 0) > 0: return True
         return False
 
-MIN_STAT = 1
-MAX_STAT = 15
-MIN_MULT = 0.0
-MAX_MULT = 5.0
-
 class Tribute:
     """The Player Character."""
+    MIN_STAT = 1
+    MAX_STAT = 15
+
     def __init__(self, 
                  name: str, 
                 district: int, 
@@ -76,7 +74,7 @@ class Tribute:
         self.proficient_items = proficient_items if proficient_items else []
     
     def _clamp(self, value: float) -> float:
-        return max(MIN_STAT, min(MAX_STAT, value))
+        return max(self.MIN_STAT, min(self.MAX_STAT, value))
 
     def modify_stat(self, stat_name: str, amount: float) -> None:
         """Safely modifies a stat within bounds."""
@@ -215,6 +213,9 @@ class Alliance:
 
 class Terrain:
     """Global Modifier and Item Container."""
+    MIN_MULT = 0.0
+    MAX_MULT = 5.0
+
     def __init__(self, 
                  name: str, 
                  tag_multipliers: Optional[dict[str,float]]=None,
@@ -227,7 +228,7 @@ class Terrain:
         if tag_multipliers:
             for tag, val in tag_multipliers.items():
                 # Prevent negative multipliers or crazy high values (e.g., 100x)
-                self.tag_multipliers[tag] = max(MIN_MULT, min(MAX_MULT, val))
+                self.tag_multipliers[tag] = max(self.MIN_MULT, min(self.MAX_MULT, val))
         
         # If no finite items provided, pick random subset from DB
         if finite_items is not None and len(finite_items) > 0:

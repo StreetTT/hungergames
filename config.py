@@ -1,11 +1,13 @@
-import os
+from os.path import join, dirname, abspath
+from os import makedirs
 
 # Configuration
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SAVES_DIR = os.path.join(BASE_DIR, "saves")
-TRIBUTES_DIR = os.path.join(BASE_DIR, "tributes")
-TERRAINS_DIR = os.path.join(BASE_DIR, "terrains")
+BASE_DIR = dirname(abspath(__file__))
+SAVES_DIR = join(BASE_DIR, "saves")
+TRIBUTES_DIR = join(BASE_DIR, "tributes")
+TERRAINS_DIR = join(BASE_DIR, "terrains")
+DATA_DIR = join(BASE_DIR, "game", "data")
 
 # Ensure folders exist
 for path in [SAVES_DIR, TRIBUTES_DIR, TERRAINS_DIR]:
-    os.makedirs(path, exist_ok=True)
+    makedirs(path, exist_ok=True)

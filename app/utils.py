@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any, Optional, Union
 from flask import jsonify
-from config import SAVES_DIR, TERRAINS_DIR, TRIBUTES_DIR
+from config import SAVES_DIR, TERRAINS_DIR, TRIBUTES_DIR, DATA_DIR
 
 DIR_MAP = {
     "tributes" : TRIBUTES_DIR,
